@@ -1,0 +1,85 @@
+---
+title: "TypeScript Tips for Real Projects"
+excerpt: "Beyond the basics — discriminated unions, satisfies, and const assertions in production code."
+date: "2026-11-08"
+tags: ["typescript"]
+pillar: "frontend"
+draft: false
+---
+
+## Discriminated Unions
+
+Instead of many booleans, model state as a tagged union:
+
+```ts
+type State =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: string[] }
+  | { status: "error"; message: string };
+```
+
+Now TypeScript **forces** you to handle every case:
+
+```ts
+function render(state: State) {
+  switch (state.status) {
+    case "idle":    return null;
+    case "loading": return <Spinner />;
+    case "success": return <List items={state.data} />;
+    case "error":   return <Error msg={state.message} />;
+  }
+}
+```
+
+Miss a case → compile error.
+
+## `satisfies` Operator
+
+Validate a value against a type **without widening** it:
+
+```ts
+const config = {
+  port: 3000,
+  host: "localhost",
+} satisfies { port: number; host: string };
+
+// config.port is still literally `number`, not `string | number`
+```
+
+Use this when you want type-checking but preserve the narrow type.
+
+## `as const`
+
+Freeze an object into literal types:
+
+```ts
+const routes = ["/", "/about", "/contact"] as const;
+type Route = (typeof routes)[number]; // "/" | "/about" | "/contact"
+```
+
+Now `Route` is a closed union — no typos possible.
+
+## Avoid `any`
+
+Use `unknown` + narrowing instead:
+
+```ts
+function parse(input: unknown) {
+  if (typeof input === "string") {
+    return input.trim();
+  }
+  throw new Error("Expected string");
+}
+```
+
+`any` disables type-checking. `unknown` **forces** you to prove the shape before use.
+
+## Prefer `type` over `interface` (mostly)
+
+- `type` — unions, intersections, mapped types, primitives
+- `interface` — when you need declaration merging (rare)
+
+For 95% of application code, `type` is more flexible.
+
+> Every `any` is technical debt. Every `unknown` is a teaching moment.

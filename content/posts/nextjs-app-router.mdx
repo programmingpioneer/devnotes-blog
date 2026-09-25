@@ -1,0 +1,79 @@
+---
+title: "Next.js 15 App Router Explained"
+excerpt: "Server components, layouts, and streaming — how to architect a modern Next.js application."
+date: "2026-11-10"
+tags: ["nextjs", "backend"]
+pillar: "frontend"
+draft: false
+---
+
+## The Mental Model
+
+Every file in `app/` is one of four things:
+
+- **page** — a route that renders UI
+- **layout** — wraps pages, persists across navigation
+- **route handler** — API endpoint (`route.ts`)
+- **special file** — `not-found.tsx`, `sitemap.ts`, `robots.ts`, etc.
+
+## Server Components by Default
+
+In the App Router, **every component is a Server Component** unless you opt out with `"use client"`.
+
+| | Server | Client |
+|---|---|---|
+| Database access | ✅ | ❌ |
+| Secrets / env | ✅ | ❌ |
+| Browser APIs | ❌ | ✅ |
+| Hooks (`useState`, etc.) | ❌ | ✅ |
+| Ships JS to browser | No | Yes |
+
+Keep components on the server unless they need interactivity.
+
+## Layouts
+
+Layouts wrap pages and **do not re-render** when navigating between child routes.
+
+```tsx
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Put persistent UI (nav, footer) in the root layout.
+
+## Data Fetching
+
+`fetch()` in Server Components is cached and deduplicated automatically. Opt out when needed:
+
+```ts
+const res = await fetch(url, { cache: "no-store" });
+```
+
+For dynamic routes, use `generateStaticParams` to prerender at build time:
+
+```ts
+export async function generateStaticParams() {
+  return getAllPostSlugs().map((slug) => ({ slug }));
+}
+```
+
+## Streaming
+
+Wrap slow components in `<Suspense>` — Next.js streams the rest of the page while they load.
+
+```tsx
+<Suspense fallback={<Skeleton />}>
+  <SlowComponent />
+</Suspense>
+```
+
+> Server Components are the biggest shift since React itself. Get them right early — retrofitting is painful.

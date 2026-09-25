@@ -1,0 +1,63 @@
+---
+title: "Tailwind CSS 4: Setup & Migration"
+excerpt: "What changed in v4 — @theme, CSS-first config, and how to migrate from v3."
+date: "2026-11-06"
+tags: ["css", "tooling"]
+pillar: "frontend"
+draft: false
+---
+
+## CSS-First Config
+
+Gone is `tailwind.config.js`. In v4, tokens live directly in CSS:
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(100% 0 0);
+  --color-foreground: oklch(13% 0 0);
+  --color-accent: oklch(58% 0.2 265);
+}
+```
+
+Tailwind auto-generates utilities from these variables:
+`bg-background`, `text-foreground`, `text-accent`, `border-accent`, etc.
+
+## Content Detection
+
+No more `content: []` glob array. v4 scans your project automatically — respects `.gitignore` by default.
+
+## Plugin API
+
+Plugins now use the `@plugin` directive inside CSS:
+
+```css
+@plugin "@tailwindcss/typography";
+```
+
+## Custom Variants
+
+Dark mode is now a custom variant:
+
+```css
+@custom-variant dark (&:is(.dark *));
+```
+
+Then use `dark:bg-black` in markup as before.
+
+## Migration Steps (v3 → v4)
+
+1. Remove `tailwind.config.js`
+2. Update `postcss.config.mjs` to use `@tailwindcss/postcss` (not `tailwindcss`)
+3. Move theme values from JS config into a `@theme` block
+4. Replace `@tailwind base; @tailwind components; @tailwind utilities;` with a single `@import "tailwindcss";`
+5. Convert plugin config from `plugins: []` to `@plugin` directives
+
+## Common Gotchas
+
+- **Arbitrary values still work** — `w-[137px]` is fine
+- **`theme()` function deprecated** — use CSS variables instead
+- **Color palette defaults** — v4 uses OKLCH, so hex values won't match v3 exactly
+
+> v4 is a rewrite, not a version bump. Budget a full day for migration on large projects — testing visual regressions matters more than the mechanical find-replace.
