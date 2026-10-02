@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireAdmin } from "@/lib/auth/session";
 import { generateUniquePostSlug } from "@/lib/content/slug";
+import { assertUploadedImageLimit } from "@/lib/content/count-uploaded-images";
 
 // ============================================================
 // Zod schemas
@@ -91,6 +92,12 @@ export async function POST(request: Request) {
 
   const { title, excerpt, content, coverImage, pillar, status, date, tags } =
     parsed.data;
+
+  // Enforce the "max 3 uploaded images per post" rule (cover + inline).
+  const limitError = assertUploadedImageLimit(coverImage || null, content);
+  if (limitError) {
+    return NextResponse.json({ error: limitError }, { status: 422 });
+  }
 
   // Generate unique slug from title
   const slug = await generateUniquePostSlug(title);

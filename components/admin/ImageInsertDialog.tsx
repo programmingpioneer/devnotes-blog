@@ -7,12 +7,16 @@ type ImageInsertDialogProps = {
   open: boolean;
   onInsert: (url: string, alt: string) => void;
   onCancel: () => void;
+  /** Endpoint for the upload. Passed through to MediaUploader so members
+   *  hit /api/user/upload instead of the admin-only route. */
+  uploadEndpoint: string;
 };
 
 export default function ImageInsertDialog({
   open,
   onInsert,
   onCancel,
+  uploadEndpoint,
 }: ImageInsertDialogProps) {
   const titleId = useId();
   const altId = useId();
@@ -59,7 +63,10 @@ export default function ImageInsertDialog({
         </h2>
 
         <div className="mt-4 space-y-4">
-          <MediaUploader onUploaded={(r) => setUrl(r.url)} />
+          <MediaUploader
+            onUploaded={(r) => setUrl(r.url)}
+            uploadEndpoint={uploadEndpoint}
+          />
 
           <div>
             <label

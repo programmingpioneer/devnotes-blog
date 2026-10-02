@@ -10,6 +10,7 @@ import { siteConfig } from "@/content/config";
 
 const schema = z.object({
   code: z.string().trim().regex(/^\d{6}$/, "Code must be 6 digits"),
+  force: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -49,7 +50,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const result = await verifyDeletionCode(session.user.id, parsed.data.code);
+    const result = await verifyDeletionCode(
+    session.user.id,
+    parsed.data.code,
+    parsed.data.force === true
+  );
 
   if (result.status === "not_found") {
     return NextResponse.json(

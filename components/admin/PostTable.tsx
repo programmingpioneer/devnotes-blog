@@ -1,12 +1,13 @@
 import Link from "next/link";
 import DeletePostButton from "./DeletePostButton";
+import type { PostStatus } from "@prisma/client";
 
 export type PostRow = {
   id: string;
   slug: string;
   title: string;
   excerpt: string;
-  status: "DRAFT" | "PUBLISHED";
+  status: PostStatus;
   pillar: string | null;
   date: Date;
   updatedAt: Date;
@@ -20,6 +21,39 @@ function formatDate(d: Date): string {
     month: "short",
     year: "numeric",
   }).format(d);
+}
+
+function StatusBadge({ status }: { status: PostStatus }) {
+  const map: Record<PostStatus, { label: string; className: string }> = {
+    DRAFT: {
+      label: "Draft",
+      className:
+        "border-border bg-muted/10 text-muted",
+    },
+    PENDING_REVIEW: {
+      label: "Pending",
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    },
+    PUBLISHED: {
+      label: "Published",
+      className:
+        "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400",
+    },
+    REJECTED: {
+      label: "Rejected",
+      className:
+        "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400",
+    },
+  };
+  const cfg = map[status];
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.className}`}
+    >
+      {cfg.label}
+    </span>
+  );
 }
 
 export default function PostTable({ posts }: { posts: PostRow[] }) {
@@ -57,7 +91,7 @@ export default function PostTable({ posts }: { posts: PostRow[] }) {
             >
               <td className="px-4 py-3">
                 <Link
-                  href={`/admin/posts/${post.id}`}
+                  href={`/admin/posts/${post.id}/preview`}
                   className="font-medium hover:text-accent"
                 >
                   {post.title}
@@ -82,15 +116,7 @@ export default function PostTable({ posts }: { posts: PostRow[] }) {
                 {formatDate(post.date)}
               </td>
               <td className="px-4 py-3">
-                {post.status === "DRAFT" ? (
-                  <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                    Draft
-                  </span>
-                ) : (
-                  <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
-                    Published
-                  </span>
-                )}
+                <StatusBadge status={post.status} />
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="inline-flex items-center gap-2">

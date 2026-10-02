@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { PostStatus } from "@prisma/client";
 
 export type ProfilePost = {
   id: string;
@@ -6,7 +7,7 @@ export type ProfilePost = {
   title: string;
   excerpt: string;
   date: Date;
-  status: "DRAFT" | "PUBLISHED";
+ status: PostStatus;
 };
 
 type ProfilePostListProps = {

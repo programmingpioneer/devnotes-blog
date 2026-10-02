@@ -10,8 +10,13 @@ export type UploadResult = {
 
 export default function MediaUploader({
   onUploaded,
+  uploadEndpoint = "/api/admin/upload",
+  preset,
 }: {
   onUploaded?: (result: UploadResult) => void;
+  uploadEndpoint?: string;
+  /** Server-side compression preset. Omit for content images. */
+  preset?: "content" | "cover";
 }) {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,8 +29,9 @@ export default function MediaUploader({
     try {
       const formData = new FormData();
       formData.append("file", file);
+      if (preset) formData.append("preset", preset);
 
-      const res = await fetch("/api/admin/upload", {
+      const res = await fetch(uploadEndpoint, {
         method: "POST",
         body: formData,
       });

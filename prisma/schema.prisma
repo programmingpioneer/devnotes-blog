@@ -102,10 +102,11 @@ model AccountDeletionRequest {
   attempts     Int       @default(0)
   requestedAt  DateTime  @default(now())
   scheduledFor DateTime
-  status       String    @default("PENDING")
-  cancelledAt  DateTime?
-  completedAt  DateTime?
-  completedBy  String?
+  status           String    @default("PENDING")
+  forceRequestedAt DateTime?
+  cancelledAt      DateTime?
+  completedAt      DateTime?
+  completedBy      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -127,6 +128,9 @@ model Post {
   date       DateTime
   pillar     String?
   status     PostStatus @default(DRAFT)
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  rejectionNote String?   @db.Text
   authorId   String
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -169,5 +173,7 @@ enum Role {
 
 enum PostStatus {
   DRAFT
+  PENDING_REVIEW
   PUBLISHED
+  REJECTED
 }

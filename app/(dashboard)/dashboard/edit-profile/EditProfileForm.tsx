@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useToast } from "@/components/shared/Toast";
 import type { ProfileLink } from "@/lib/profile/schemas";
@@ -35,6 +36,7 @@ const BIO_MAX = 500;
 export default function EditProfileForm({ initial, email }: EditProfileFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { update: updateSession } = useSession();
 
   const [name, setName] = useState(initial.name);
   const [username, setUsername] = useState(initial.username);
@@ -43,7 +45,9 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
   const [coverImage, setCoverImage] = useState(initial.coverImage);
   const [links, setLinks] = useState<ProfileLink[]>(initial.links);
 
-  const [saving, setSaving] = useState(false);
+   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>({ kind: "idle" });
 
   // Detect dirty state by comparing current values vs initial snapshot
@@ -119,6 +123,48 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
 
   const bioOver = bio.length > BIO_MAX;
 
+    async function uploadFile(file: File, kind: "avatar" | "cover") {
+    const setUploading =
+      kind === "avatar" ? setUploadingAvatar : setUploadingCover;
+    const setUrl = kind === "avatar" ? setImage : setCoverImage;
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/user/upload", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "Upload failed.", "error");
+        return;
+      }
+      setUrl(data.url);
+      toast(
+        kind === "avatar" ? "Avatar uploaded." : "Cover uploaded.",
+        "success"
+      );
+    } catch {
+      toast("Network error. Please try again.", "error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function onPickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) void uploadFile(f, "avatar");
+    e.target.value = ""; // allow picking same file again
+  }
+
+   function onPickCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) void uploadFile(f, "cover");
+    e.target.value = "";
+  }
+
   async function onSave() {
     if (usernameBlocked || bioOver) return;
     setSaving(true);
@@ -144,6 +190,7 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
       }
 
       toast("Profile updated.", "success");
+      await updateSession({}); // {} forces POST → triggers jwt refresh
       const newUsername = data.user?.username ?? username;
       router.push(`/u/${newUsername}`);
       router.refresh();
@@ -162,7 +209,7 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
   return (
     <div className="min-h-screen">
       {/* Sticky top bar */}
-      <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
+        <div className="sticky top-14 z-20 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <Link
@@ -236,36 +283,36 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
             <section className="rounded-xl border border-border bg-background p-5">
               <h2 className="mb-3 text-sm font-semibold">Avatar</h2>
               <div className="space-y-2">
-                <label htmlFor="image" className="block text-sm font-medium">
-                  Avatar URL
-                </label>
-                <input
-                  id="image"
-                  type="url"
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted">
-                    Direct link to an image. Recommended: 400 × 400
-                  </p>
+                               <p className="text-xs text-muted">
+                  Recommended: 400 × 400 · PNG / JPEG / WebP / AVIF · max 5 MB
+                </p>
+                               <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="avatar-upload"
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-accent hover:text-accent ${
+                      uploadingAvatar ? "pointer-events-none opacity-60" : ""
+                    }`}
+                  >
+                    {uploadingAvatar ? "Uploading…" : "Upload from computer"}
+                  </label>
+                                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/avif"
+                    onChange={onPickAvatar}
+                    disabled={uploadingAvatar}
+                    className="hidden"
+                  />
                   {image && (
                     <button
                       type="button"
                       onClick={() => setImage("")}
-                      className="text-xs text-muted hover:text-red-500"
+                      className="ml-auto text-xs text-muted hover:text-red-500"
                     >
-                      Clear
+                      Remove
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-muted">
-                  <span className="inline-flex items-center gap-1 rounded border border-border px-2 py-0.5 opacity-60">
-                    File upload — coming soon
-                  </span>
-                </p>
               </div>
             </section>
 
@@ -319,7 +366,7 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
                       )}
                     />
                   </div>
-                  <div className="mt-1.5 min-h-[18px] text-xs">
+                  <div className="mt-1.5 min-h-4.5 text-xs">
                     {usernameStatus.kind === "checking" && (
                       <span className="text-muted">Checking…</span>
                     )}
@@ -375,34 +422,36 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
             <section className="rounded-xl border border-border bg-background p-5">
               <h2 className="mb-3 text-sm font-semibold">Cover image</h2>
               <div className="space-y-2">
-                <label htmlFor="coverImage" className="block text-sm font-medium">
-                  Cover URL
-                </label>
-                <input
-                  id="coverImage"
-                  type="url"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  placeholder="https://images.example.com/cover.jpg"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted">Recommended: 1500 × 500</p>
+                                <p className="text-xs text-muted">
+                  Recommended: 1500 × 500 · PNG / JPEG / WebP / AVIF · max 5 MB
+                </p>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="cover-upload"
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-accent hover:text-accent ${
+                      uploadingCover ? "pointer-events-none opacity-60" : ""
+                    }`}
+                  >
+                    {uploadingCover ? "Uploading…" : "Upload from computer"}
+                  </label>
+                  <input
+                    id="cover-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/avif"
+                    onChange={onPickCover}
+                    disabled={uploadingCover}
+                    className="hidden"
+                  />
                   {coverImage && (
                     <button
                       type="button"
                       onClick={() => setCoverImage("")}
-                      className="text-xs text-muted hover:text-red-500"
+                      className="ml-auto text-xs text-muted hover:text-red-500"
                     >
-                      Clear
+                      Remove
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-muted">
-                  <span className="inline-flex items-center gap-1 rounded border border-border px-2 py-0.5 opacity-60">
-                    File upload — coming soon
-                  </span>
-                </p>
               </div>
             </section>
           </div>

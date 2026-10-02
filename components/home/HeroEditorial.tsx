@@ -1,4 +1,5 @@
-﻿import PostCard from "@/components/post/PostCard";
+import PostCard from "@/components/post/PostCard";
+import RevealOnScroll from "@/components/shared/RevealOnScroll";
 import type { PostMeta } from "@/lib/content/posts";
 
 type HeroEditorialProps = {
@@ -11,14 +12,16 @@ export default function HeroEditorial({
   sidePosts,
 }: HeroEditorialProps) {
   return (
-    <div className="grid gap-5 md:grid-cols-5">
-      <div className="md:col-span-3">
+    <div className="grid gap-5 md:grid-cols-12 md:gap-6">
+      <RevealOnScroll className="md:col-span-7">
         <PostCard post={featured} variant="featured" />
-      </div>
+      </RevealOnScroll>
 
-      <div className="flex flex-col gap-5 md:col-span-2">
-        {sidePosts.map((post) => (
-          <PostCard key={post.slug} post={post} />
+      <div className="flex flex-col gap-5 md:col-span-5">
+        {sidePosts.map((post, i) => (
+          <RevealOnScroll key={post.slug} delay={120 + i * 90}>
+            <PostCard post={post} />
+          </RevealOnScroll>
         ))}
       </div>
     </div>

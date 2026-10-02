@@ -22,8 +22,8 @@ export default function PostCard({ post, variant = "default" }: PostCardProps) {
     <article
       className={
         isFeatured
-          ? "group flex flex-col gap-4 rounded-lg border border-border p-6 transition-colors hover:border-accent md:p-8"
-          : "group flex flex-col gap-3 rounded-lg border border-border p-5 transition-colors hover:border-accent"
+          ? "group flex flex-col gap-4 rounded-lg border border-border border-l-4 border-l-accent bg-accent/[0.03] p-6 shadow-soft-md transition-token hover:-translate-y-0.5 hover:border-accent md:p-8"
+          : "group flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-soft-sm transition-token hover:-translate-y-0.5 hover:border-accent hover:shadow-soft-md"
       }
     >
       <div className="flex flex-wrap gap-2">
@@ -35,8 +35,8 @@ export default function PostCard({ post, variant = "default" }: PostCardProps) {
       <h3
         className={
           isFeatured
-            ? "text-2xl font-semibold tracking-tight md:text-3xl"
-            : "text-lg font-semibold tracking-tight"
+            ? "text-3xl font-semibold tracking-tight md:text-4xl"
+            : "text-base font-semibold tracking-tight"
         }
       >
         <Link

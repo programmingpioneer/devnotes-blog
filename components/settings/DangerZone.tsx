@@ -44,6 +44,7 @@ export default function DangerZone() {
   const [code, setCode] = useState("");
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
   const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  const [intentForce, setIntentForce] = useState(false);
   const codeRef = useRef<HTMLInputElement>(null);
 
   // Focus the code input when the user enters the code step.
@@ -74,11 +75,12 @@ export default function DangerZone() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, step, busy]);
 
-  function resetState() {
+   function resetState() {
     setStep("confirm");
     setCode("");
     setAttemptsLeft(null);
     setScheduledFor(null);
+    setIntentForce(false);
   }
 
   function closeModal() {
@@ -86,7 +88,8 @@ export default function DangerZone() {
     window.setTimeout(resetState, 200);
   }
 
-  async function requestDeletion() {
+   async function requestDeletion(force = false) {
+    setIntentForce(force);
     setBusy(true);
     try {
       const res = await fetch("/api/user/delete/request", { method: "POST" });
@@ -115,7 +118,7 @@ export default function DangerZone() {
       const res = await fetch("/api/user/delete/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, force: intentForce }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -228,7 +231,7 @@ export default function DangerZone() {
                   <li>- You can cancel by logging in before then</li>
                 </ul>
 
-                <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={closeModal}
@@ -239,13 +242,22 @@ export default function DangerZone() {
                   </button>
                   <button
                     type="button"
-                    onClick={requestDeletion}
+                    onClick={() => requestDeletion(false)}
                     disabled={busy}
                     className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
                     {busy ? "Sending..." : "Send code"}
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => requestDeletion(true)}
+                  disabled={busy}
+                  className="mt-2 w-full rounded-md border border-red-500/40 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-60"
+                >
+                  Force delete now (skip 15-day wait)
+                </button>
 
                 <button
                   type="button"
@@ -324,23 +336,40 @@ export default function DangerZone() {
               </form>
             )}
 
-            {step === "done" && (
+                       {step === "done" && (
               <>
                 <h2
                   id="deletion-modal-title"
                   className="text-lg font-semibold tracking-tight"
                 >
-                  Account scheduled for deletion
+                  {intentForce
+                    ? "Immediate deletion requested"
+                    : "Account scheduled for deletion"}
                 </h2>
-                <p className="mt-2 text-sm text-muted">
-                  Your account is scheduled for permanent deletion on{" "}
-                  <strong>{formatDate(scheduledFor)}</strong>. A confirmation
-                  email has been sent.
-                </p>
-                <p className="mt-2 text-sm text-muted">
-                  Logging in before that date will cancel the request
-                  automatically.
-                </p>
+                {intentForce ? (
+                  <>
+                    <p className="mt-2 text-sm text-muted">
+                      Your request has been sent. An admin will permanently
+                      delete your account shortly.
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      You are being signed out to prevent accidental
+                      cancellation.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-sm text-muted">
+                      Your account is scheduled for permanent deletion on{" "}
+                      <strong>{formatDate(scheduledFor)}</strong>. A
+                      confirmation email has been sent.
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      Logging in before that date will cancel the request
+                      automatically.
+                    </p>
+                  </>
+                )}
                 <p className="mt-4 text-sm font-medium text-accent">
                   Signing you out...
                 </p>

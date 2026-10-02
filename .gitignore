@@ -35,8 +35,9 @@ yarn-error.log*
 # local junk
 /chat.deepseek.com (3)/
 /project_snapshot.txt
-/MEMORY.md
 
 # editor backups
 *.bak
 *.bak2
+# local project snapshots (do not commit)
+/_backup/

@@ -1,8 +1,11 @@
-﻿import Container from "@/components/shared/Container";
+import { Suspense } from "react";
+import Container from "@/components/shared/Container";
 import Section from "@/components/shared/Section";
 import HeroEditorial from "@/components/home/HeroEditorial";
+import AnimatedHero from "@/components/home/AnimatedHero";
 import TopicHubs from "@/components/home/TopicHubs";
 import RecentGrid from "@/components/home/RecentGrid";
+import SearchInput from "@/components/shared/SearchInput";
 import { getAllPosts } from "@/lib/content/posts";
 import { getTopicStats } from "@/lib/content/topics";
 
@@ -32,13 +35,13 @@ export default async function HomePage() {
   return (
     <Container>
       <Section>
-        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-          Production-level Web Dev & Backend Architecture.
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg text-muted">
-          Real case studies, war stories, and engineering notes from shipping
-          software. No fluff. No spin.
-        </p>
+        <AnimatedHero />
+      </Section>
+
+      <Section>
+        <Suspense fallback={null}>
+          <SearchInput />
+        </Suspense>
       </Section>
 
       <Section>

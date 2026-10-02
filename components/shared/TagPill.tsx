@@ -12,8 +12,8 @@ export default function TagPill({
   className,
   asLink = true,
 }: TagPillProps) {
-  const classes = cn(
-    "inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-accent",
+    const classes = cn(
+    "inline-flex items-center rounded-full border border-border bg-subtle px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:border-accent hover:bg-accent/[0.05] hover:text-accent",
     className
   );
 

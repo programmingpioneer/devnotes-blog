@@ -14,11 +14,19 @@ function formatDate(d: Date): string {
 export default async function AdminPage() {
   const user = await getCurrentUser();
 
-  const [totalPosts, publishedPosts, draftPosts, totalUsers, recentPosts, recentUsers] =
-    await Promise.all([
+    const [
+    totalPosts,
+    publishedPosts,
+    draftPosts,
+    pendingPosts,
+    totalUsers,
+    recentPosts,
+    recentUsers,
+  ] = await Promise.all([
       prisma.post.count(),
       prisma.post.count({ where: { status: "PUBLISHED" } }),
       prisma.post.count({ where: { status: "DRAFT" } }),
+      prisma.post.count({ where: { status: "PENDING_REVIEW" } }),
       prisma.user.count(),
       prisma.post.findMany({
         orderBy: { createdAt: "desc" },
@@ -56,8 +64,8 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Stats grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Total posts" value={totalPosts} href="/admin/posts" />
         <StatCard
           label="Published"
@@ -69,6 +77,12 @@ export default async function AdminPage() {
           }
         />
         <StatCard label="Drafts" value={draftPosts} />
+        <StatCard
+          label="Pending review"
+          value={pendingPosts}
+          sublabel={pendingPosts > 0 ? "needs attention" : "all clear"}
+          href="/admin/pending"
+        />
         <StatCard label="Users" value={totalUsers} href="/admin/users" />
       </div>
 

@@ -8,6 +8,7 @@ export type PostMeta = {
   date: string;
   tags: string[];
   pillar?: string;
+  coverImage?: string | null;
   draft: boolean;
   readingTime: string;
 };
@@ -30,6 +31,7 @@ const POST_SELECT = {
   content: true,
   date: true,
   pillar: true,
+  coverImage: true,
   status: true,
   tags: { select: { tag: { select: { name: true } } } },
 } satisfies Prisma.PostSelect;
@@ -42,8 +44,6 @@ const POST_DETAIL_SELECT = {
     select: { id: true, name: true, username: true, image: true, bio: true },
   },
 } satisfies Prisma.PostSelect;
-
-type PostDetailRow = Prisma.PostGetPayload<{ select: typeof POST_DETAIL_SELECT }>;
 
 function calcReadingTime(text: string): string {
   const words = text.trim().split(/\s+/).length;
@@ -59,6 +59,7 @@ function toPostMeta(post: PostRow): PostMeta {
     date: post.date.toISOString().slice(0, 10),
     tags: post.tags.map((pt) => pt.tag.name),
     pillar: post.pillar ?? undefined,
+    coverImage: post.coverImage,
     draft: post.status === "DRAFT",
     readingTime: calcReadingTime(post.content),
   };

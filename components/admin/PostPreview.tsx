@@ -11,17 +11,17 @@ type PostPreviewProps = {
   title: string;
   excerpt: string;
   content: string;
+  coverImage?: string;
 };
 
 export default function PostPreview({
   title,
   excerpt,
   content,
+  coverImage,
 }: PostPreviewProps) {
   const hasContent = content.trim().length > 0;
 
-  // Memoize the rendered tree so typing outside the content field
-  // doesn't re-parse the markdown.
   const rendered = useMemo(() => {
     if (!hasContent) return null;
     return (
@@ -37,12 +37,25 @@ export default function PostPreview({
     );
   }, [content, hasContent]);
 
+  const trimmedCover = coverImage?.trim();
+
   return (
     <div className="rounded-xl border border-border bg-background">
       <div className="border-b border-border px-4 py-2 text-xs font-medium text-muted">
         Live Preview
       </div>
       <div className="max-h-[600px] overflow-y-auto p-4">
+        {trimmedCover && (
+          <div className="mb-6 overflow-hidden rounded-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={trimmedCover}
+              alt={title.trim() || "Cover image"}
+              className="w-full h-auto"
+            />
+          </div>
+        )}
+
         {(title.trim() || excerpt.trim()) && (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">

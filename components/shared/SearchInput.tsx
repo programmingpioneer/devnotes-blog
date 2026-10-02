@@ -31,6 +31,22 @@ export default function SearchInput({ autoFocus = false }: SearchInputProps) {
 
   return (
     <div className="relative">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+      >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
+
       <input
         type="search"
         value={value}
@@ -38,8 +54,9 @@ export default function SearchInput({ autoFocus = false }: SearchInputProps) {
         placeholder="Search articles, tags, topics..."
         aria-label="Search articles"
         autoFocus={autoFocus}
-        className="w-full rounded-md border border-border bg-background px-4 py-3 text-base outline-none transition-colors focus:border-accent"
+        className="w-full rounded-md border border-border bg-background py-3.5 pl-10 pr-4 text-base outline-none transition-colors placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
+
       {value && (
         <button
           type="button"

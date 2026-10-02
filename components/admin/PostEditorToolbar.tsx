@@ -3,11 +3,21 @@
 import type { MouseEvent, RefObject } from "react";
 import { useCallback, useState } from "react";
 import ImageInsertDialog from "@/components/admin/ImageInsertDialog";
+import { MAX_UPLOADED_IMAGES } from "@/lib/content/count-uploaded-images";
 
 type PostEditorToolbarProps = {
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   value: string;
   onChange: (next: string) => void;
+  /** Endpoint for inline image uploads. Admin -> /api/admin/upload,
+   *  members -> /api/user/upload. Derived by PostForm from apiBasePath. */
+  uploadEndpoint: string;
+  /** Current count of R2-uploaded images (cover + inline). Used to block
+   *  the Image dialog once MAX_UPLOADED_IMAGES is reached. */
+  uploadedCount: number;
+  /** Called when the user clicks Image at the limit, so the parent can
+   *  surface a toast. Server-side enforcement is still authoritative. */
+  onLimitReached?: () => void;
 };
 
 type Sel = { start: number; end: number };
@@ -176,9 +186,14 @@ export default function PostEditorToolbar({
   textareaRef,
   value,
   onChange,
+  uploadEndpoint,
+  uploadedCount,
+  onLimitReached,
 }: PostEditorToolbarProps) {
   const [imageOpen, setImageOpen] = useState(false);
   const [imageSel, setImageSel] = useState<Sel | null>(null);
+
+  const atLimit = uploadedCount >= MAX_UPLOADED_IMAGES;
 
   const apply = useCallback(
     (fn: (t: string, s: Sel) => Result) => {
@@ -200,6 +215,10 @@ export default function PostEditorToolbar({
   // Capture the cursor position *before* the modal opens. Once the modal
   // takes focus, the textarea's selection may be reset by the browser.
   function openImageDialog() {
+    if (atLimit) {
+      onLimitReached?.();
+      return;
+    }
     const ta = textareaRef.current;
     if (!ta) return;
     setImageSel({ start: ta.selectionStart, end: ta.selectionEnd });
@@ -246,7 +265,13 @@ export default function PostEditorToolbar({
 
         <Div />
 
-        <Btn label="Image" title="Insert image" onClick={openImageDialog} onMouseDown={keepFocus} />
+        <Btn
+          label="Image"
+          title={atLimit ? `Maximum ${MAX_UPLOADED_IMAGES} uploaded images per post` : "Insert image"}
+          onClick={openImageDialog}
+          onMouseDown={keepFocus}
+          dimmed={atLimit}
+        />
 
         <Div />
 
@@ -267,6 +292,7 @@ export default function PostEditorToolbar({
         open={imageOpen}
         onInsert={handleInsertImage}
         onCancel={closeImageDialog}
+        uploadEndpoint={uploadEndpoint}
       />
     </>
   );
@@ -281,6 +307,7 @@ function Btn({
   onMouseDown,
   bold,
   italic,
+  dimmed,
 }: {
   label: string;
   title: string;
@@ -288,17 +315,24 @@ function Btn({
   onMouseDown: (e: MouseEvent<HTMLButtonElement>) => void;
   bold?: boolean;
   italic?: boolean;
+  /** When true, renders the button as visually disabled but keeps it
+   *  clickable so the parent can surface an explanatory toast. */
+  dimmed?: boolean;
 }) {
   return (
     <button
       type="button"
       title={title}
       aria-label={title}
+      aria-disabled={dimmed || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}
       className={[
-        "min-w-[28px] rounded px-2 py-1 text-xs text-muted transition-colors",
-        "hover:bg-background hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40",
+        "min-w-[28px] rounded px-2 py-1 text-xs transition-colors",
+        dimmed
+          ? "cursor-not-allowed text-muted/40"
+          : "text-muted hover:bg-background hover:text-accent",
+        "focus:outline-none focus:ring-2 focus:ring-accent/40",
         bold ? "font-bold" : "font-medium",
         italic ? "italic" : "",
       ].join(" ")}

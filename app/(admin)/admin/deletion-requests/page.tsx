@@ -4,13 +4,22 @@ import DeletionRequestTable, {
   type SerializedDeletionRequest,
 } from "@/components/admin/DeletionRequestTable";
 import StatCard from "@/components/admin/StatCard";
+import Pagination from "@/components/shared/Pagination";
 
-export default async function AdminDeletionRequestsPage() {
+const PAGE_SIZE = 15;
+
+type SearchParams = { page?: string };
+
+export default async function AdminDeletionRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   await requireAdmin();
 
   const requests = await listDeletionRequests();
 
-    const serialized: SerializedDeletionRequest[] = requests.map((r) => ({
+  const serialized: SerializedDeletionRequest[] = requests.map((r) => ({
     id: r.id,
     userId: r.userId,
     name: r.name,
@@ -19,6 +28,9 @@ export default async function AdminDeletionRequestsPage() {
     requestedAt: r.requestedAt.toISOString(),
     scheduledFor: r.scheduledFor.toISOString(),
     status: r.status,
+    forceRequestedAt: r.forceRequestedAt
+      ? r.forceRequestedAt.toISOString()
+      : null,
     daysRemaining: r.daysRemaining,
     postCount: r.postCount,
   }));
@@ -28,9 +40,16 @@ export default async function AdminDeletionRequestsPage() {
   const inGrace = serialized.filter((r) => r.daysRemaining > 0).length;
   const postsAffected = serialized.reduce((sum, r) => sum + r.postCount, 0);
 
+  const { page: pageParam } = await searchParams;
+  const parsed = Number.parseInt(pageParam ?? "1", 10);
+  const page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const paged = serialized.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="space-y-6">
-           <div>
+      <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           Deletion requests
         </h1>
@@ -53,7 +72,13 @@ export default async function AdminDeletionRequestsPage() {
         <StatCard label="Posts" value={postsAffected} sublabel="affected" />
       </div>
 
-      <DeletionRequestTable requests={serialized} />
+      <DeletionRequestTable requests={paged} />
+
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        basePath="/admin/deletion-requests"
+      />
     </div>
   );
 }

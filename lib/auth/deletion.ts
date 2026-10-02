@@ -78,7 +78,8 @@ export type VerifyDeletionResult =
  */
 export async function verifyDeletionCode(
   userId: string,
-  code: string
+  code: string,
+  force = false
 ): Promise<VerifyDeletionResult> {
   const req = await prisma.accountDeletionRequest.findUnique({
     where: { userId },
@@ -116,13 +117,14 @@ export async function verifyDeletionCode(
     };
   }
 
-  // Success — schedule it
+    // Success — schedule it
   await prisma.accountDeletionRequest.update({
     where: { userId },
     data: {
       status: "SCHEDULED",
       code: "", // wipe code after use
       codeExpires: new Date(0),
+      ...(force ? { forceRequestedAt: new Date() } : {}),
     },
   });
 
@@ -166,6 +168,7 @@ export type DeletionRequestRow = {
   requestedAt: Date;
   scheduledFor: Date;
   status: string;
+  forceRequestedAt: Date | null;
   daysRemaining: number;
   canDeleteNow: boolean;
   postCount: number;
@@ -177,14 +180,15 @@ export type DeletionRequestRow = {
  */
 export async function listDeletionRequests(): Promise<DeletionRequestRow[]> {
   const rows = await prisma.accountDeletionRequest.findMany({
-    where: { status: { in: ["PENDING", "SCHEDULED"] } },
+    where: { status: "SCHEDULED" },
     orderBy: { scheduledFor: "asc" },
-    select: {
+      select: {
       id: true,
       userId: true,
       requestedAt: true,
       scheduledFor: true,
       status: true,
+      forceRequestedAt: true,
       user: {
         select: {
           name: true,
@@ -213,6 +217,7 @@ export async function listDeletionRequests(): Promise<DeletionRequestRow[]> {
       requestedAt: r.requestedAt,
       scheduledFor: r.scheduledFor,
       status: r.status,
+      forceRequestedAt: r.forceRequestedAt,
       daysRemaining,
       canDeleteNow: daysRemaining === 0,
       postCount: r.user._count.posts,
@@ -242,8 +247,8 @@ export async function permanentlyDeleteUser(
   if (!req) return { status: "not_found" };
   if (req.status === "COMPLETED") return { status: "already_completed" };
 
-  if (!bypass && req.scheduledFor > new Date()) {
-    return { status: "not_found" }; // still in grace period
+  if (!bypass && !req.forceRequestedAt && req.scheduledFor > new Date()) {
+    return { status: "not_found" }; // still in grace period (unless user requested force)
   }
 
   await prisma.$transaction(async (tx) => {

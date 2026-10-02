@@ -8,6 +8,7 @@ type NavLink = { href: string; label: string; exact?: boolean };
 
 const links: NavLink[] = [
   { href: "/dashboard", label: "Overview", exact: true },
+  { href: "/dashboard/posts", label: "My Posts" },
   { href: "/dashboard/edit-profile", label: "Profile" },
   { href: "/dashboard/settings", label: "Settings" },
 ];

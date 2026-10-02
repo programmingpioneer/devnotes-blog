@@ -1,4 +1,5 @@
-﻿import { notFound } from "next/navigation";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
@@ -55,20 +56,60 @@ export default async function PostPage({ params }: Params) {
         <article>
           <Breadcrumbs items={crumbs} />
 
-          <header className="mb-10">
+          {post.coverImage && (
+            <div className="mt-6 overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.coverImage}
+                alt={post.title}
+                className="w-full h-auto"
+              />
+            </div>
+          )}
+
+          <header className="mb-10 mt-8">
             <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
               {post.title}
             </h1>
             <p className="mt-3 text-muted">{post.excerpt}</p>
-            <div className="mt-4 flex items-center gap-3 text-sm text-muted">
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted">
+              {post.author.name || post.author.username ? (
+                <>
+                  <span>
+                    By{" "}
+                    {post.author.username ? (
+                      <Link
+                        href={`/u/${post.author.username}`}
+                        className="transition-token hover:text-accent"
+                      >
+                        {post.author.name ?? post.author.username}
+                      </Link>
+                    ) : (
+                      post.author.name
+                    )}
+                  </span>
+                  <span aria-hidden>·</span>
+                </>
+              ) : null}
               <time dateTime={post.date}>{post.date}</time>
-              <span aria-hidden>Â·</span>
+              <span aria-hidden>·</span>
               <span>{post.readingTime}</span>
             </div>
           </header>
 
+          {headings.length > 0 && (
+            <details className="mb-8 rounded-lg border border-border p-3 lg:hidden">
+              <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wider text-muted">
+                On this page ▾
+              </summary>
+              <div className="mt-3">
+                <TOC headings={headings} hideHeading />
+              </div>
+            </details>
+          )}
+
           <Prose>
-              <MDXRemote
+            <MDXRemote
               source={post.content}
               components={mdxComponents}
               options={{

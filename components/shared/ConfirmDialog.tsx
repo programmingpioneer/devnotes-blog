@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -11,6 +11,8 @@ type ConfirmDialogProps = {
   destructive?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Optional content rendered between description and action buttons. */
+  children?: ReactNode;
 };
 
 export default function ConfirmDialog({
@@ -22,6 +24,7 @@ export default function ConfirmDialog({
   destructive = false,
   onConfirm,
   onCancel,
+  children,
 }: ConfirmDialogProps) {
   const titleId = useId();
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -57,6 +60,7 @@ export default function ConfirmDialog({
         {description && (
           <p className="mt-2 text-sm text-muted">{description}</p>
         )}
+        {children && <div className="mt-4">{children}</div>}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"

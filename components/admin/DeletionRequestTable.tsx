@@ -12,6 +12,7 @@ export type SerializedDeletionRequest = {
   requestedAt: string;
   scheduledFor: string;
   status: string;
+  forceRequestedAt: string | null;
   daysRemaining: number;
   postCount: number;
 };
@@ -188,24 +189,34 @@ export default function DeletionRequestTable({
                         req.daysRemaining === 1 ? "day" : "days"
                       }`}
                 </td>
-                <td className="px-4 py-3">
-                  {req.daysRemaining === 0 ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
+                                <td className="px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {req.daysRemaining === 0 ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full bg-red-500"
+                          aria-hidden="true"
+                        />
+                        Ready
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full bg-muted"
+                          aria-hidden="true"
+                        />
+                        Pending
+                      </span>
+                    )}
+                    {req.forceRequestedAt && (
                       <span
-                        className="h-1.5 w-1.5 rounded-full bg-red-500"
-                        aria-hidden="true"
-                      />
-                      Ready
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">
-                      <span
-                        className="h-1.5 w-1.5 rounded-full bg-muted"
-                        aria-hidden="true"
-                      />
-                      Pending
-                    </span>
-                  )}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500"
+                        title={`User requested immediate deletion on ${formatDate(req.forceRequestedAt)}`}
+                      >
+                        Force requested
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="hidden px-4 py-3 text-muted sm:table-cell">
                   {req.postCount}
@@ -222,7 +233,12 @@ export default function DeletionRequestTable({
                     <button
                       type="button"
                       onClick={() => openModal(req, "normal")}
-                      disabled={req.daysRemaining > 0}
+                      disabled={req.daysRemaining > 0 && !req.forceRequestedAt}
+                      title={
+                        req.daysRemaining > 0 && !req.forceRequestedAt
+                          ? `Available in ${req.daysRemaining} day(s), or use "Force delete now" to override`
+                          : undefined
+                      }
                       className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Delete permanently

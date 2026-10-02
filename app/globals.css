@@ -4,37 +4,102 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Fonts */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Core colors (unchanged) */
   --color-background: oklch(100% 0 0);
   --color-foreground: oklch(13% 0 0);
   --color-muted: oklch(55% 0 0);
   --color-border: oklch(90% 0 0);
   --color-accent: oklch(58% 0.2 265);
 
+  /* NEW: surface layers */
+  --color-surface: oklch(98% 0 0);
+  --color-card: oklch(100% 0 0);
+  --color-elevated: oklch(99% 0 0);
+  --color-subtle: oklch(96% 0 0);
+
+  /* Code blocks: always dark for readability (GitHub/Dev.to style) */
+  --color-code-bg: oklch(22% 0.02 265);
+  --color-code-fg: oklch(93% 0.005 265);
+
+  /* Radius */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* NEW: soft shadow scale */
+  --shadow-soft-sm: 0 1px 2px oklch(0% 0 0 / 0.04);
+  --shadow-soft-md: 0 4px 12px oklch(0% 0 0 / 0.06);
+  --shadow-soft-lg: 0 12px 32px oklch(0% 0 0 / 0.08);
+
+  /* NEW: motion tokens */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .dark {
   --color-background: oklch(13% 0 0);
+  --color-code-bg: oklch(17% 0.015 265);
+  --color-code-fg: oklch(93% 0.005 265);
   --color-foreground: oklch(97% 0 0);
   --color-muted: oklch(65% 0 0);
   --color-border: oklch(25% 0 0);
   --color-accent: oklch(68% 0.18 265);
+
+  /* NEW: dark surface layers */
+  --color-surface: oklch(15% 0 0);
+  --color-card: oklch(17% 0 0);
+  --color-elevated: oklch(19% 0 0);
+  --color-subtle: oklch(22% 0 0);
+
+  /* NEW: dark shadows (darker, deeper) */
+  --shadow-soft-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-soft-md: 0 4px 12px oklch(0% 0 0 / 0.4);
+  --shadow-soft-lg: 0 12px 32px oklch(0% 0 0 / 0.5);
+}
+
+@utility transition-token {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-out-quart);
 }
 
 @layer base {
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+  }
 
-  body {
+   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 15% 10%, oklch(58% 0.2 265 / 0.16) 0%, transparent 70%),
+      radial-gradient(ellipse 55% 45% at 85% 90%, oklch(58% 0.2 265 / 0.16) 0%, transparent 70%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.03 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(ellipse 60% 50% at 15% 10%, oklch(68% 0.18 265 / 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 55% 45% at 85% 90%, oklch(68% 0.18 265 / 0.18) 0%, transparent 70%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+   /* Headings: bold Geist */
+  h1, h2, h3 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   :focus-visible {
@@ -47,5 +112,39 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+@layer utilities {
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition-property: opacity, transform;
+    transition-duration: var(--duration-slow);
+    transition-timing-function: var(--ease-out-quart);
+  }
+  .reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+}
+/* Smooth light/dark transition when user toggles theme.
+   Only active while html has .theme-transition class (~300ms).
+   Wrapped in no-preference so reduced-motion users get instant switch. */
+@media (prefers-reduced-motion: no-preference) {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition:
+      background-color 280ms var(--ease-out-quart),
+      border-color 280ms var(--ease-out-quart),
+      color 280ms var(--ease-out-quart) !important;
   }
 }

@@ -9,8 +9,9 @@ type NavLink = { href: string; label: string; exact?: boolean };
 const links: NavLink[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/posts", label: "Posts" },
+  { href: "/admin/pending", label: "Pending" },
   { href: "/admin/users", label: "Users" },
-   { href: "/admin/deletion-requests", label: "Deletions" },
+  { href: "/admin/deletion-requests", label: "Deletions" },
 ];
 
 export default function AdminNav() {

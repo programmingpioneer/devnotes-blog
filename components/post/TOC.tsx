@@ -6,9 +6,12 @@ import { cn } from "@/lib/utils";
 
 type TOCProps = {
   headings: Heading[];
+  /** When true, skip the built-in "On this page" label.
+   *  Used by the mobile <details> wrapper where the summary already shows it. */
+  hideHeading?: boolean;
 };
 
-export default function TOC({ headings }: TOCProps) {
+export default function TOC({ headings, hideHeading = false }: TOCProps) {
   const [active, setActive] = useState<string>("");
 
   useEffect(() => {
@@ -38,9 +41,11 @@ export default function TOC({ headings }: TOCProps) {
 
   return (
     <nav aria-label="Table of contents" className="text-sm">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
-        On this page
-      </p>
+      {!hideHeading && (
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          On this page
+        </p>
+      )}
       <ul className="space-y-0.5">
         {headings.map((h) => {
           const isActive = active === h.id;
@@ -53,7 +58,7 @@ export default function TOC({ headings }: TOCProps) {
                 href={`#${h.id}`}
                 aria-current={isActive ? "location" : undefined}
                 className={cn(
-                  "block w-full break-words border-l-2 py-1 pl-3 pr-2 text-[13px] leading-snug transition-colors",
+                  "block w-full break-words border-l-2 py-1 pl-3 pr-2 text-[13px] leading-snug transition-colors duration-150",
                   isActive
                     ? "border-accent font-medium text-accent"
                     : "border-transparent text-muted hover:border-border hover:text-foreground"

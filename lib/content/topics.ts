@@ -6,7 +6,6 @@ import {
   getAllPosts,
   getPostsByPillar as dbGetPostsByPillar,
   getPostsByTag as dbGetPostsByTag,
-  getAllTags as dbGetAllTags,
   type PostMeta,
 } from "./posts";
 

@@ -85,19 +85,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+       async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id ?? "";
         token.role = user.role;
         token.username = user.username ?? null;
+        token.name = user.name ?? null;
+        token.picture = user.image ?? null;
       }
+
+      // On client-side session.update(), refresh from DB so navbar
+      // reflects avatar/name/username changes without logout-login.
+      if (trigger === "update" && typeof token.id === "string" && token.id) {
+        try {
+          const fresh = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: {
+              name: true,
+              image: true,
+              username: true,
+              role: true,
+            },
+          });
+          if (fresh) {
+            token.name = fresh.name;
+            token.picture = fresh.image;
+            token.username = fresh.username;
+            token.role = fresh.role;
+          }
+        } catch (err) {
+          console.error("[auth] session update refresh failed:", err);
+        }
+      }
+
       return token;
     },
-    async session({ session, token }) {
+        async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.username = token.username ?? null;
+        session.user.name = (token.name as string | null | undefined) ?? null;
+        session.user.image = (token.picture as string | null | undefined) ?? null;
       }
       return session;
     },

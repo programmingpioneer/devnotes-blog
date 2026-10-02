@@ -1,13 +1,29 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { siteConfig } from "@/content/config";
 import ThemeToggle from "@/components/layout/ThemeToggle";
-import UserMenu from "@/components/layout/UserMenu";
-import { getSession } from "@/lib/auth/session";
+import MobileNav from "@/components/layout/MobileNav";
+import NavUserArea from "@/components/layout/NavUserArea";
 
-export default async function Navbar() {
-  const session = await getSession();
-  const user = session?.user;
-
+function SearchIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
       <nav
@@ -16,7 +32,7 @@ export default async function Navbar() {
       >
         <Link
           href="/"
-          className="text-sm font-semibold tracking-tight hover:text-accent"
+          className="text-base font-semibold tracking-tight transition-colors duration-150 hover:text-accent"
         >
           {siteConfig.title}
         </Link>
@@ -35,23 +51,16 @@ export default async function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          {user ? (
-            <UserMenu
-              name={user.name ?? null}
-              email={user.email ?? ""}
-              image={user.image ?? null}
-              role={user.role}
-              username={user.username ?? null}
-            />
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-accent"
-            >
-              Sign in
-            </Link>
-          )}
+          <Link
+            href="/search"
+            aria-label="Search"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted transition-token hover:border-accent hover:text-accent"
+          >
+            <SearchIcon />
+          </Link>
+          <NavUserArea />
           <ThemeToggle />
+          <MobileNav items={siteConfig.nav} />
         </div>
       </nav>
     </header>

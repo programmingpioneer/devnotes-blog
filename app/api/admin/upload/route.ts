@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/session";
-import { uploadImage, validateImage } from "@/lib/storage/r2";
+import {
+  uploadImage,
+  validateImage,
+  type ImagePreset,
+} from "@/lib/storage/r2";
 
 // Node.js runtime — required for @aws-sdk/client-s3 and node:crypto.
 // Edge runtime would fail at import time.
@@ -39,8 +43,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: check.error }, { status: 400 });
   }
 
+  // Optional `preset` form field: "content" (default) | "cover".
+  // Unknown values fall back to "content" — never trust the client.
+  const presetField = formData.get("preset");
+  const preset: ImagePreset =
+    presetField === "cover" ? "cover" : "content";
+
   try {
-    const result = await uploadImage(file);
+    const result = await uploadImage(file, preset);
     return NextResponse.json({ ok: true, ...result }, { status: 201 });
   } catch (err) {
     // Log server-side for debugging; do not leak details to client

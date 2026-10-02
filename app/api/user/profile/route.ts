@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db/client";
 import {
   profileUpdateSchema,
   validateLinkUrl,
-  type ProfileLink,
 } from "@/lib/profile/schemas";
 
 export async function PATCH(request: Request) {

@@ -4,6 +4,7 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
+import sharp from "sharp";
 
 // ============================================================
 // Constants
@@ -104,28 +105,61 @@ export function validateImage(file: File): ValidationResult {
   return { ok: true };
 }
 
+// ============================================================
+// Compression presets
+// ------------------------------------------------------------
+// `content` — images inside post bodies (diagrams, screenshots).
+//   Higher resolution + quality because legibility matters.
+// `cover` — hero image at the top of a post. Larger canvas but
+//   lower quality is fine (photographic, viewed at a glance).
+//
+// All output is WebP: 25–35% smaller than JPEG at equal quality,
+// preserves transparency for PNG sources.
+// ============================================================
+export type ImagePreset = "content" | "cover";
+
+const PRESETS: Record<
+  ImagePreset,
+  { maxWidth: number; quality: number }
+> = {
+  content: { maxWidth: 1600, quality: 82 },
+  cover: { maxWidth: 1920, quality: 72 },
+};
+
 /**
- * Uploads an image to R2 under `uploads/<uuid>.<ext>`.
- * Returns the storage key and the public URL.
+ * Uploads an image to R2, compressed to WebP under the given preset.
+ * Storage key: `uploads/<uuid>.webp`. Returns the key and public URL.
  *
- * Throws on validation failure OR R2 error — caller (API route)
- * must catch and translate to HTTP responses.
+ * Throws on validation failure, compression failure, or R2 error —
+ * caller (API route) must catch and translate to HTTP responses.
  */
-export async function uploadImage(file: File): Promise<UploadResult> {
+export async function uploadImage(
+  file: File,
+  preset: ImagePreset = "content"
+): Promise<UploadResult> {
   const check = validateImage(file);
   if (!check.ok) throw new Error(check.error);
 
-  const ext = EXT_BY_MIME[file.type];
-  const key = `${KEY_PREFIX}${randomUUID()}.${ext}`;
+  const { maxWidth, quality } = PRESETS[preset];
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+  const compressed = await sharp(inputBuffer)
+    // respect EXIF orientation (portrait phone shots), strip the tag
+    .rotate()
+    // never upscale small images
+    .resize({ width: maxWidth, withoutEnlargement: true })
+    .webp({ quality })
+    .toBuffer();
+
+  // WebP output for every source (PNG transparency is preserved).
+  const key = `${KEY_PREFIX}${randomUUID()}.webp`;
 
   await getClient().send(
     new PutObjectCommand({
       Bucket: getBucket(),
       Key: key,
-      Body: buffer,
-      ContentType: file.type,
+      Body: compressed,
+      ContentType: "image/webp",
     })
   );
 

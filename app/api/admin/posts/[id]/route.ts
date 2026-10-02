@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireAdmin } from "@/lib/auth/session";
 import { generateUniquePostSlug } from "@/lib/content/slug";
+import { assertUploadedImageLimit } from "@/lib/content/count-uploaded-images";
 
 // ============================================================
 // Shared schema (all fields optional for PATCH)
@@ -26,7 +27,7 @@ const updatePostSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
-  status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
+    status: z.enum(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "REJECTED"]).optional(),
   date: z.string().datetime().optional(),
   tags: z.array(z.string().trim().min(1).max(50)).max(10).optional(),
   regenerateSlug: z.boolean().optional(),
@@ -95,13 +96,23 @@ export async function PATCH(request: Request, { params }: Params) {
   // Ensure post exists
   const existing = await prisma.post.findUnique({
     where: { id },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, coverImage: true, content: true },
   });
   if (!existing) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
   const { tags, regenerateSlug, coverImage, pillar, date, ...rest } = parsed.data;
+
+  // Enforce the "max 3 uploaded images per post" rule (cover + inline).
+  // For fields not present in the body, fall back to the stored value.
+  const nextCover =
+    coverImage !== undefined ? coverImage || null : existing.coverImage;
+  const nextContent = rest.content !== undefined ? rest.content : existing.content;
+  const limitError = assertUploadedImageLimit(nextCover, nextContent);
+  if (limitError) {
+    return NextResponse.json({ error: limitError }, { status: 422 });
+  }
 
   // Slug regeneration: if title changed and requested, or slug is same as old slugified title
   let newSlug: string | undefined;

@@ -6,10 +6,14 @@ import { topics } from "@/content/topics";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const staticRoutes: MetadataRoute.Sitemap = [
+    const staticRoutes: MetadataRoute.Sitemap = [
     { url: siteConfig.url, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${siteConfig.url}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteConfig.url}/contact`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${siteConfig.url}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${siteConfig.url}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${siteConfig.url}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${siteConfig.url}/cookies`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const topicRoutes: MetadataRoute.Sitemap = topics.map((t) => ({

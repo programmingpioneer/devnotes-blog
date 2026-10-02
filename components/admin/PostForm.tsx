@@ -8,9 +8,15 @@ import { cn } from "@/lib/utils";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import PostPreview from "@/components/admin/PostPreview";
 import PostEditorToolbar from "@/components/admin/PostEditorToolbar";
+import MediaUploader from "@/components/admin/MediaUploader";
+import type { PostStatus } from "@prisma/client";
 import SaveStatusIndicator, {
   type SaveStatus,
 } from "@/components/admin/SaveStatusIndicator";
+import {
+  countUploadedImagesClient,
+  MAX_UPLOADED_IMAGES,
+} from "@/lib/content/count-uploaded-images";
 
 export type PostFormData = {
   id?: string;
@@ -19,13 +25,23 @@ export type PostFormData = {
   content: string;
   coverImage: string;
   pillar: string;
-  status: "DRAFT" | "PUBLISHED";
+  status: PostStatus;
   tags: string[];
 };
 
 type Props = {
   initial?: PostFormData;
   pillars: { slug: string; name: string }[];
+  /** Base path for Cancel link and post-save navigation. Default: admin posts. */
+  basePath?: string;
+  /** Base path for API fetch calls. Default: admin posts API. */
+  apiBasePath?: string;
+  /** Show the Publish button. Default true (admin). Members set false. */
+  allowPublish?: boolean;
+  /** Show the Save Draft button. Default true. */
+  allowSaveDraft?: boolean;
+  /** Show the Submit-for-review button. Default false (admin). Members set true. */
+  allowSubmitForReview?: boolean;
 };
 
 const inputClass =
@@ -34,14 +50,30 @@ const inputClass =
 // Idle time after the last edit before autosave fires.
 const AUTOSAVE_DELAY_MS = 30_000;
 
-type SaveMode = "draft" | "publish" | "autosave";
+type SaveMode = "draft" | "publish" | "submit" | "autosave";
 
-export default function PostForm({ initial, pillars }: Props) {
+export default function PostForm({
+  initial,
+  pillars,
+  basePath = "/admin/posts",
+  apiBasePath = "/api/admin/posts",
+  allowPublish = true,
+  allowSaveDraft = true,
+  allowSubmitForReview = false,
+}: Props) {
+
   const router = useRouter();
   const { toast } = useToast();
 
   const [postId, setPostId] = useState<string | null>(initial?.id ?? null);
   const isEdit = Boolean(postId);
+
+  // Members hit /api/user/upload (any logged-in user); admins hit
+  // /api/admin/upload (admin-only). Derived from the form's apiBasePath
+  // so no page needs to pass an extra prop.
+  const uploadEndpoint = apiBasePath.startsWith("/api/admin")
+    ? "/api/admin/upload"
+    : "/api/user/upload";
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [excerpt, setExcerpt] = useState(initial?.excerpt ?? "");
@@ -78,6 +110,14 @@ export default function PostForm({ initial, pillars }: Props) {
   // True while ANY save (manual or autosave) is in flight. Guards against
   // overlapping requests that could create duplicate posts.
   const savingRef = useRef(false);
+
+  // Live count of R2-uploaded images (cover + inline) — used to disable
+  // the Image button once the limit is reached. Server-side enforcement
+  // remains authoritative; this is purely UX.
+  const uploadedCount = countUploadedImagesClient(
+    coverImage || null,
+    content
+  );
 
   function currentSnapshot(): string {
     return JSON.stringify({
@@ -174,8 +214,10 @@ export default function PostForm({ initial, pillars }: Props) {
       tags,
     };
 
-    if (mode === "publish") {
+      if (mode === "publish") {
       body.status = "PUBLISHED";
+    } else if (mode === "submit") {
+      body.status = "PENDING_REVIEW";
     } else {
       // Autosave and Save Draft never set status on an existing post, so the
       // server preserves the current DRAFT/PUBLISHED value. On a brand new
@@ -185,7 +227,7 @@ export default function PostForm({ initial, pillars }: Props) {
 
     try {
       const res = await fetch(
-        postId ? `/api/admin/posts/${postId}` : "/api/admin/posts",
+        postId ? `${apiBasePath}/${postId}` : apiBasePath,
         {
           method: postId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -209,12 +251,12 @@ export default function PostForm({ initial, pillars }: Props) {
   function adoptNewId(newId: string) {
     setPostId(newId);
     if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `/admin/posts/${newId}`);
+      window.history.replaceState(null, "", `${basePath}/${newId}`);
     }
   }
 
   // ---- Manual save ----
-  async function save(action: "DRAFT" | "PUBLISHED") {
+    async function save(action: "DRAFT" | "PUBLISHED" | "PENDING_REVIEW") {
     if (savingRef.current) return;
 
     // Cancel any pending autosave — the manual save supersedes it.
@@ -226,7 +268,13 @@ export default function PostForm({ initial, pillars }: Props) {
     savingRef.current = true;
     setSaving(true);
 
-    const result = await persist(action === "PUBLISHED" ? "publish" : "draft");
+      const mode: SaveMode =
+      action === "PUBLISHED"
+        ? "publish"
+        : action === "PENDING_REVIEW"
+          ? "submit"
+          : "draft";
+    const result = await persist(mode);
 
     if (!result.ok) {
       toast(result.error, "error");
@@ -241,9 +289,19 @@ export default function PostForm({ initial, pillars }: Props) {
     setLastSavedAt(Date.now());
     setSaveStatus("saved");
 
-    if (action === "PUBLISHED") {
+      if (action === "PUBLISHED") {
       toast(isEdit ? "Post updated." : "Post published.", "success");
-      router.push("/admin/posts");
+      router.push(basePath);
+      router.refresh();
+      return;
+    }
+
+    if (action === "PENDING_REVIEW") {
+      toast(
+        isEdit ? "Submitted for review." : "Post submitted for review.",
+        "success"
+      );
+      router.push(basePath);
       router.refresh();
       return;
     }
@@ -307,8 +365,13 @@ export default function PostForm({ initial, pillars }: Props) {
     e.preventDefault();
     const submitter = (e.nativeEvent as SubmitEvent)
       .submitter as HTMLButtonElement | null;
-    const action: "DRAFT" | "PUBLISHED" =
-      submitter?.value === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
+    const value = submitter?.value;
+    const action: "DRAFT" | "PUBLISHED" | "PENDING_REVIEW" =
+      value === "PUBLISHED"
+        ? "PUBLISHED"
+        : value === "PENDING_REVIEW"
+          ? "PENDING_REVIEW"
+          : "DRAFT";
     await save(action);
   }
 
@@ -415,6 +478,14 @@ export default function PostForm({ initial, pillars }: Props) {
               textareaRef={contentRef}
               value={content}
               onChange={setContent}
+              uploadEndpoint={uploadEndpoint}
+              uploadedCount={uploadedCount}
+              onLimitReached={() =>
+                toast(
+                  `Maximum ${MAX_UPLOADED_IMAGES} uploaded images per post (cover + inline combined).`,
+                  "error"
+                )
+              }
             />
             <textarea
               ref={contentRef}
@@ -432,8 +503,13 @@ export default function PostForm({ initial, pillars }: Props) {
           </div>
 
           {/* Mobile-only preview */}
-          <div className={cn("md:hidden", mobileView === "edit" && "hidden")}>
-            <PostPreview title={title} excerpt={excerpt} content={content} />
+            <div className={cn("md:hidden", mobileView === "edit" && "hidden")}>
+            <PostPreview
+              title={title}
+              excerpt={excerpt}
+              content={content}
+              coverImage={coverImage}
+            />
           </div>
         </div>
 
@@ -495,11 +571,26 @@ export default function PostForm({ initial, pillars }: Props) {
             </div>
           </div>
 
-          {/* Cover section */}
+                   {/* Cover section */}
           <div className="rounded-xl border border-border bg-background p-4">
             <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
               Cover
             </h3>
+
+            <MediaUploader
+              uploadEndpoint={uploadEndpoint}
+              preset="cover"
+              onUploaded={(r) => {
+                setCoverImage(r.url);
+                setCoverError(false);
+              }}
+            />
+
+            <div className="my-4 flex items-center gap-3 text-xs text-muted">
+              <span className="h-px flex-1 bg-border" />
+              or paste a URL
+              <span className="h-px flex-1 bg-border" />
+            </div>
 
             <label
               htmlFor="coverImage"
@@ -520,14 +611,26 @@ export default function PostForm({ initial, pillars }: Props) {
             />
 
             {coverImage && /^https?:\/\//i.test(coverImage) && !coverError && (
-              <div className="mt-3 overflow-hidden rounded-md border border-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={coverImage}
-                  alt="Cover preview"
-                  className="h-32 w-full object-cover"
-                  onError={() => setCoverError(true)}
-                />
+              <div className="mt-3 space-y-2">
+                <div className="overflow-hidden rounded-md border border-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverImage}
+                    alt="Cover preview"
+                    className="h-32 w-full object-cover"
+                    onError={() => setCoverError(true)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoverImage("");
+                    setCoverError(false);
+                  }}
+                  className="text-xs font-medium text-muted transition-colors hover:text-red-500"
+                >
+                  Remove cover
+                </button>
               </div>
             )}
           </div>
@@ -536,7 +639,12 @@ export default function PostForm({ initial, pillars }: Props) {
 
       {/* Desktop/tablet full-width preview */}
       <div className="hidden md:block">
-        <PostPreview title={title} excerpt={excerpt} content={content} />
+        <PostPreview
+          title={title}
+          excerpt={excerpt}
+          content={content}
+          coverImage={coverImage}
+        />
       </div>
 
       {/* Sticky action bar — safe-area aware on iOS */}
@@ -551,30 +659,47 @@ export default function PostForm({ initial, pillars }: Props) {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/posts"
+            href={basePath}
             className="rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent sm:px-4"
           >
             Cancel
           </Link>
 
-          <button
-            type="submit"
-            name="action"
-            value="DRAFT"
-            disabled={saving}
-            className="px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Save Draft
-          </button>
-          <button
-            type="submit"
-            name="action"
-            value="PUBLISHED"
-            disabled={saving}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving ? "Saving..." : isEdit ? "Update" : "Publish"}
-          </button>
+                   {allowSaveDraft && (
+            <button
+              type="submit"
+              name="action"
+              value="DRAFT"
+              disabled={saving}
+              className="px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Save Draft
+            </button>
+          )}
+
+          {allowSubmitForReview && (
+            <button
+              type="submit"
+              name="action"
+              value="PENDING_REVIEW"
+              disabled={saving}
+              className="rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+            >
+              {saving ? "Saving..." : "Submit for review"}
+            </button>
+          )}
+
+          {allowPublish && (
+            <button
+              type="submit"
+              name="action"
+              value="PUBLISHED"
+              disabled={saving}
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "Saving..." : isEdit ? "Update" : "Publish"}
+            </button>
+          )}
         </div>
       </div>
 
