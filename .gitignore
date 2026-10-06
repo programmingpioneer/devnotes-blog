@@ -41,3 +41,8 @@ yarn-error.log*
 *.bak2
 # local project snapshots (do not commit)
 /_backup/
+
+# internal docs & editor config (do not commit)
+/DESIGN.md
+/MEMORY.md
+/.vscode/
