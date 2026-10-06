@@ -1,4 +1,4 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth/auth";
@@ -68,8 +68,27 @@ export default async function ProfilePage({ params }: PageProps) {
       excerpt: true,
       date: true,
       status: true,
+      views: true,
+      _count: { select: { likes: true } },
     },
   });
+
+  const viewerId = session?.user?.id;
+
+  const likedPostIds: Set<string> =
+    viewerId && posts.length > 0
+      ? new Set(
+          (
+            await prisma.postLike.findMany({
+              where: {
+                userId: viewerId,
+                postId: { in: posts.map((p) => p.id) },
+              },
+              select: { postId: true },
+            })
+          ).map((r) => r.postId),
+        )
+      : new Set<string>();
 
   const profilePosts: ProfilePost[] = posts.map((p) => ({
     id: p.id,
@@ -78,6 +97,9 @@ export default async function ProfilePage({ params }: PageProps) {
     excerpt: p.excerpt,
     date: p.date,
     status: p.status,
+    views: p.views,
+    likes: p._count.likes,
+    likedByMe: likedPostIds.has(p.id),
   }));
 
   const links = (user.links as ProfileLink[] | null) ?? null;
@@ -108,7 +130,11 @@ export default async function ProfilePage({ params }: PageProps) {
           )}
         </div>
 
-        <ProfilePostList posts={profilePosts} isOwner={isOwner} />
+        <ProfilePostList
+          posts={profilePosts}
+          isOwner={isOwner}
+          canLike={!!session?.user?.id}
+        />
       </section>
 
       {!isOwner && (

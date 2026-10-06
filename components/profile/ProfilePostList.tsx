@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PostStatus } from "@prisma/client";
+import EngagementMeta from "@/components/post/EngagementMeta";
 
 export type ProfilePost = {
   id: string;
@@ -7,12 +8,16 @@ export type ProfilePost = {
   title: string;
   excerpt: string;
   date: Date;
- status: PostStatus;
+  status: PostStatus;
+  views: number;
+  likes: number;
+  likedByMe: boolean;
 };
 
 type ProfilePostListProps = {
   posts: ProfilePost[];
   isOwner: boolean;
+  canLike?: boolean;
 };
 
 function formatDate(d: Date): string {
@@ -26,6 +31,7 @@ function formatDate(d: Date): string {
 export default function ProfilePostList({
   posts,
   isOwner,
+  canLike = false,
 }: ProfilePostListProps) {
   if (posts.length === 0) {
     return (
@@ -76,31 +82,41 @@ export default function ProfilePostList({
                 {post.excerpt}
               </p>
 
-              <div className="mt-3 flex items-center justify-between text-xs text-muted">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
                 <time dateTime={post.date.toISOString()}>
                   {formatDate(post.date)}
                 </time>
 
-                <Link
-                  href={`/posts/${post.slug}`}
-                  className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
-                >
-                  Read more
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
+                <div className="flex items-center gap-3">
+                  <EngagementMeta
+                    slug={post.slug}
+                    views={post.views}
+                    likes={post.likes}
+                    likedByMe={post.likedByMe}
+                    canLike={canLike}
+                  />
+
+                  <Link
+                    href={`/posts/${post.slug}`}
+                    className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
                   >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </Link>
+                    Read more
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
             </article>
           </li>

@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { PostAuthor } from "@/lib/content/posts";
 
 const FALLBACK_BIO =
@@ -22,7 +22,7 @@ export default function AuthorCard({ author }: { author: PostAuthor }) {
   const bio = author.bio?.trim() || FALLBACK_BIO;
 
   return (
-    <aside className="mt-12 flex flex-col gap-4 rounded-lg border border-border p-6 md:flex-row md:items-center">
+    <aside className="mt-12 flex flex-col gap-4 rounded-xl border border-border p-6 md:flex-row md:items-center">
       <div
         aria-hidden
         className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-lg font-semibold text-accent"

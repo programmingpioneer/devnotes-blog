@@ -31,6 +31,8 @@ model User {
   posts           Post[]
   passwordResets  PasswordResetToken[]
   deletionRequest AccountDeletionRequest?
+  likes           PostLike[]
+  postViews       PostView[]
 
   @@index([email])
 }
@@ -128,6 +130,7 @@ model Post {
   date       DateTime
   pillar     String?
   status     PostStatus @default(DRAFT)
+  views      Int        @default(0)
   reviewedAt    DateTime?
   reviewedBy    String?
   rejectionNote String?   @db.Text
@@ -135,12 +138,16 @@ model Post {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  author User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags   PostTag[]
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags      PostTag[]
+  likes     PostLike[]
+  postViews PostView[]
+  collections CollectionPost[]
 
   @@index([status, date])
   @@index([authorId])
   @@index([pillar])
+  @@index([views])
 }
 
 model Tag {
@@ -160,6 +167,76 @@ model PostTag {
 
   @@id([postId, tagId])
   @@index([tagId])
+}
+
+// ============================================================
+// POST ENGAGEMENT
+// ============================================================
+
+// Per-user like — one row per (post, user).
+// Unique constraint prevents double-likes at DB level.
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+// View tracking — dedup over a 24h window per identity.
+// Logged-in users: identified by userId (ipHash left null).
+// Logged-out users: identified by ipHash (+ optional sessionId).
+// Post.views is the cached counter; this table is the idempotency source.
+model PostView {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String?
+  ipHash    String?
+  sessionId String?
+  createdAt DateTime @default(now())
+
+  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+   @@index([postId, createdAt])
+  @@index([userId])
+  @@index([ipHash])
+}
+
+// ============================================================
+// COLLECTIONS
+// ============================================================
+
+model Collection {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @db.Text
+  coverImage  String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       CollectionPost[]
+
+  @@index([featured])
+}
+
+model CollectionPost {
+  collectionId String
+  postId       String
+  position     Int      @default(0)
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, postId])
+  @@index([postId])
 }
 
 // ============================================================

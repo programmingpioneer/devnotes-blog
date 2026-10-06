@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const themeScript = `try{const t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
+const themeScript = `try{const t=localStorage.getItem('theme');if(localStorage.getItem('theme')==='light'){document.documentElement.classList.remove('dark')}}catch(e){}`;
 
 export default function RootLayout({
   children,
@@ -42,13 +42,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={geist.variable}
+      className={`${geist.variable} dark`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-screen flex flex-col">
+        {/* Aurora ambient layer — fixed, behind all content */}
+        <div aria-hidden className="ambient-background" />
         <Providers>
           <JSONLD data={[organizationJsonLd(), websiteJsonLd()]} />
           <ProgressBar />

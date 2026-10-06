@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function seedAdmin() {
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
 
@@ -40,6 +40,53 @@ async function main() {
   });
 
   console.log(`✓ Admin created: ${admin.email} (id: ${admin.id})`);
+}
+
+async function seedFeaturedCollection() {
+  const slug = "modern-web-development";
+  const existing = await prisma.collection.findUnique({ where: { slug } });
+
+  if (existing) {
+    console.log(`↻ Collection already exists: ${slug}`);
+    return;
+  }
+
+  const posts = await prisma.post.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { date: "desc" },
+    take: 5,
+    select: { id: true },
+  });
+
+  if (posts.length === 0) {
+    console.log(`↻ No published posts found — skipping collection seed`);
+    return;
+  }
+
+  const collection = await prisma.collection.create({
+    data: {
+      slug,
+      title: "Modern Web Development",
+      description:
+        "Curated collection of the most important articles for modern web developers.",
+      featured: true,
+      posts: {
+        create: posts.map((p, idx) => ({
+          postId: p.id,
+          position: idx,
+        })),
+      },
+    },
+  });
+
+  console.log(
+    `✓ Collection created: ${collection.slug} (${posts.length} posts attached)`
+  );
+}
+
+async function main() {
+  await seedAdmin();
+  await seedFeaturedCollection();
 }
 
 main()

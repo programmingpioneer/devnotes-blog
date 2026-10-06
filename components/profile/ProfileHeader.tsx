@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { ProfileLink } from "@/lib/profile/schemas";
 import SocialLinks from "@/components/profile/SocialLinks";
 
@@ -49,7 +49,7 @@ export default function ProfileHeader({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-accent/25 via-accent/10 to-transparent" />
+          <div className="h-full w-full bg-linear-to-br from-accent/25 via-accent/10 to-transparent" />
         )}
 
         {/* Avatar — half inside cover, half outside */}

@@ -12,13 +12,17 @@ export async function GET(request: Request) {
 
   const withContent = await getAllPostsWithContent();
 
-  const results = searchPosts(withContent, query).map((r) => ({
+   const results = searchPosts(withContent, query).map((r) => ({
     slug: r.slug,
     title: r.title,
     excerpt: r.excerpt,
     date: r.date,
     readingTime: r.readingTime,
     tags: r.tags,
+    coverImage: r.coverImage ?? null,
+    views: r.views,
+    likes: r.likes,
+    author: r.author,
     score: r.score,
   }));
 

@@ -1,17 +1,24 @@
 import { Suspense } from "react";
 import Container from "@/components/shared/Container";
 import Section from "@/components/shared/Section";
-import HeroEditorial from "@/components/home/HeroEditorial";
-import AnimatedHero from "@/components/home/AnimatedHero";
+import HomeHero from "@/components/home/HomeHero";
 import TopicHubs from "@/components/home/TopicHubs";
 import RecentGrid from "@/components/home/RecentGrid";
-import SearchInput from "@/components/shared/SearchInput";
+import SearchCard from "@/components/home/sidebar/SearchCard";
+import FeaturedCollectionCard from "@/components/home/sidebar/FeaturedCollectionCard";
+import TopicListCard from "@/components/home/sidebar/TopicListCard";
+import NewsletterCard from "@/components/home/sidebar/NewsletterCard";
+import QuoteCard from "@/components/home/sidebar/QuoteCard";
 import { getAllPosts } from "@/lib/content/posts";
 import { getTopicStats } from "@/lib/content/topics";
+import { getFeaturedCollection } from "@/lib/content/collections";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function HomePage() {
-  const posts = await getAllPosts();
+  const user = await getCurrentUser();
+  const posts = await getAllPosts(user?.id);
   const topics = await getTopicStats();
+  const collection = await getFeaturedCollection();
 
   if (posts.length === 0) {
     return (
@@ -28,35 +35,36 @@ export default async function HomePage() {
     );
   }
 
-  const [featured, ...rest] = posts;
-  const sidePosts = rest.slice(0, 3);
-  const recentPosts = rest.slice(3);
+  const [featured, ...recentPosts] = posts;
 
   return (
     <Container>
+      {/* FULL-WIDTH HERO (12 cols of container) */}
       <Section>
-        <AnimatedHero />
+        <HomeHero featured={featured} canLike={!!user} />
       </Section>
 
+      {/* BELOW HERO: MAIN (8) + SIDEBAR (4) */}
       <Section>
-        <Suspense fallback={null}>
-          <SearchInput />
-        </Suspense>
-      </Section>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
+          <main className="flex flex-col gap-12 lg:col-span-8">
+            <TopicHubs topics={topics} />
+            {recentPosts.length > 0 && (
+              <RecentGrid posts={recentPosts} canLike={!!user} />
+            )}
+          </main>
 
-      <Section>
-        <HeroEditorial featured={featured} sidePosts={sidePosts} />
+          <aside className="flex flex-col gap-5 lg:col-span-4">
+            <Suspense fallback={null}>
+              <SearchCard />
+            </Suspense>
+            <FeaturedCollectionCard collection={collection} />
+            <TopicListCard topics={topics} />
+            <NewsletterCard />
+            <QuoteCard />
+          </aside>
+        </div>
       </Section>
-
-      <Section>
-        <TopicHubs topics={topics} />
-      </Section>
-
-      {recentPosts.length > 0 && (
-        <Section>
-          <RecentGrid posts={recentPosts} />
-        </Section>
-      )}
     </Container>
   );
 }

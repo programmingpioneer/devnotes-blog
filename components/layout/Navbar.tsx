@@ -4,26 +4,18 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import MobileNav from "@/components/layout/MobileNav";
 import NavUserArea from "@/components/layout/NavUserArea";
 
-function SearchIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="shrink-0"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
+// Split a camelCase title like "DevNotes" into ["Dev", "Notes"].
+// Falls back to the whole string as the brand half when the title has no
+// camelCase boundary (e.g. all-lowercase or single-token titles).
+function splitTitle(title: string): [string, string] {
+  const match = title.match(/^([A-Z][a-z]+)(.+)$/);
+  if (match) return [match[1], match[2]];
+  return [title, ""];
 }
+
 export default function Navbar() {
+  const [brand, accent] = splitTitle(siteConfig.title);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
       <nav
@@ -32,9 +24,10 @@ export default function Navbar() {
       >
         <Link
           href="/"
-          className="text-base font-semibold tracking-tight transition-colors duration-150 hover:text-accent"
+          className="text-base font-semibold tracking-tight transition-opacity duration-150 hover:opacity-80"
         >
-          {siteConfig.title}
+          <span className="text-foreground">{brand}</span>
+          <span className="text-accent">{accent}</span>
         </Link>
 
         <ul className="hidden items-center gap-6 text-sm text-muted md:flex">
@@ -51,13 +44,6 @@ export default function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/search"
-            aria-label="Search"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted transition-token hover:border-accent hover:text-accent"
-          >
-            <SearchIcon />
-          </Link>
           <NavUserArea />
           <ThemeToggle />
           <MobileNav items={siteConfig.nav} />

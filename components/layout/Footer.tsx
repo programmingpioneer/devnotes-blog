@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { siteConfig } from "@/content/config";
 
+// Mirrors the two-tone split used by the Navbar.
+// Kept local rather than extracted; if a third use appears, lift to lib/utils.ts.
+function splitTitle(title: string): [string, string] {
+  const match = title.match(/^([A-Z][a-z]+)(.+)$/);
+  if (match) return [match[1], match[2]];
+  return [title, ""];
+}
+
 function GitHubIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -33,28 +41,38 @@ const socialLinks = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const [brand, accent] = splitTitle(siteConfig.title);
 
   return (
     <footer className="mt-20 border-t border-border bg-background">
       <div className="mx-auto max-w-5xl px-4 py-12 md:py-16">
-        <div className="grid gap-10 md:grid-cols-12 md:gap-8">
-          <div className="md:col-span-5">
-            <Link href="/" className="text-lg font-semibold tracking-tight transition-colors duration-200 hover:text-accent">
-              {siteConfig.title}
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-12 md:gap-8">
+          {/* Col 1: Brand + tagline */}
+          <div className="sm:col-span-2 md:col-span-5">
+            <Link
+              href="/"
+              className="text-lg font-semibold tracking-tight transition-opacity duration-200 hover:opacity-80"
+            >
+              <span className="text-foreground">{brand}</span>
+              <span className="text-accent">{accent}</span>
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">
               {siteConfig.tagline}
             </p>
           </div>
 
-          <div className="md:col-span-3">
+          {/* Col 2: Navigate */}
+          <div className="md:col-span-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
               Navigate
             </h2>
             <ul className="mt-4 space-y-2.5 text-sm">
               {siteConfig.nav.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-muted transition-colors duration-200 hover:text-foreground">
+                  <Link
+                    href={item.href}
+                    className="text-muted transition-colors duration-200 hover:text-foreground"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -62,7 +80,8 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="md:col-span-4">
+          {/* Col 3: Elsewhere */}
+          <div className="md:col-span-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
               Elsewhere
             </h2>
@@ -72,7 +91,9 @@ export default function Footer() {
                   <Link
                     href={link.href}
                     className="group inline-flex items-center gap-2.5 text-sm text-muted transition-colors duration-200 hover:text-foreground"
-                    {...(link.external ? { target: "_blank", rel: "noreferrer noopener" } : {})}
+                    {...(link.external
+                      ? { target: "_blank", rel: "noreferrer noopener" }
+                      : {})}
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border transition-colors duration-200 group-hover:border-accent/40 group-hover:text-accent">
                       {link.icon}
@@ -83,13 +104,20 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-        </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {year} {siteConfig.author.name}. All rights reserved.
-          </p>
-          <p>Built with Next.js and Tailwind CSS.</p>
+          {/* Col 4: Meta */}
+          <div className="md:col-span-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              Info
+            </h2>
+            <div className="mt-4 space-y-2.5 text-xs leading-relaxed text-muted">
+              <p>
+                © {year} {siteConfig.author.name}
+              </p>
+              <p>All rights reserved.</p>
+              <p className="pt-1">Built with Next.js and Tailwind CSS.</p>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

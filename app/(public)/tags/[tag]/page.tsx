@@ -6,6 +6,7 @@ import PostCard from "@/components/post/PostCard";
 import EmptyState from "@/components/shared/EmptyState";
 import { getPostsByTag, getAllTags } from "@/lib/content/topics";
 import { siteConfig } from "@/content/config";
+import { getCurrentUser } from "@/lib/auth/session";
 
 type Params = { params: Promise<{ tag: string }> };
 
@@ -28,7 +29,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function TagPage({ params }: Params) {
   const { tag } = await params;
-  const posts = await getPostsByTag(tag);
+  const user = await getCurrentUser();
+  const posts = await getPostsByTag(tag, user?.id);
+  const canLike = !!user;
 
   if (posts.length === 0) notFound();
 
@@ -56,7 +59,7 @@ export default async function TagPage({ params }: Params) {
         <Section>
           <div className="grid gap-5 md:grid-cols-2">
             {posts.map((post) => (
-              <PostCard key={post.slug} post={post} />
+              <PostCard key={post.slug} post={post} canLike={canLike} />
             ))}
           </div>
         </Section>

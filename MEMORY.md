@@ -2,7 +2,131 @@
 
 > Running memory of decisions, verified behavior, and current implementation state.
 > Update after every significant phase completion.
-> Last updated: 2026-09-29 (Force delete + profile upload complete)
+> Last updated: 2026-10-03 (UI Redesign Block B + polish T1-T5 complete)
+
+### 9.7 - UI Redesign Block (COMPLETED 2026-10-03)
+
+Scope: Home redesign (B1-B8) + dark theme + hero/featured/sidebar polish.
+Plan reference: FINAL PLAN - DevNotes Redesign (20 chunks A/B/C/D).
+
+Chunks shipped (verified via PowerShell file inspection 2026-10-03 17:14):
+
+Phase B - Home redesign:
+| Chunk | Description | Status |
+|---|---|---|
+| B1 | Navbar two-tone logo + inline search | OK |
+| B2 | Footer 4-column grid | OK |
+| B3 | HomeHero (replaces AnimatedHero + HeroEditorial top-left) | OK |
+| B4 | TopicHubs restyle | OK |
+| B5 | RecentGrid with thumbnails + views/likes | OK |
+| B6 | PostCard redesign (default + featured) | OK |
+| B7 | Sidebar cards (Search, FeaturedCollection, TopicList, Newsletter, Quote) | OK |
+| B8 | page.tsx composition (hero + main 8 + sidebar 4) | OK |
+
+Post-B polish (ad-hoc, in-session):
+| Chunk | Description | Status |
+|---|---|---|
+| T1 | Dark mode default (layout.tsx) | OK verified |
+| T2 | Hero H1 sizes + accent line 2 | OK verified |
+| T3 | PostCard hero variant vertical (image top 16/9) | OK verified |
+| T4 | TopicHubs 3-col grid | NOT VERIFIED |
+| T5 | Sidebar cards rounded-lg -> rounded-xl | OK verified |
+
+Files added:
+- (none - all work edited existing files)
+
+Files changed:
+- app/layout.tsx                    dark default (SSR class + no-flash script)
+- components/home/HomeHero.tsx      grid 1.05fr/0.95fr, H1 t4/t5/t6xl
+- components/post/PostCard.tsx      hero variant vertical, 16/9 image
+- components/home/sidebar/*.tsx     5 files rounded-lg -> rounded-xl
+- app/(public)/page.tsx             hero full-width, main 8/4 sidebar
+
+Files deleted:
+- components/home/AnimatedHero.tsx     (B8)
+- components/home/HeroEditorial.tsx    (B8)
+- components/home/sidebar/LatestPostsSidebarCard.tsx  (2026-10-03 16:57)
+
+Known issues:
+- layout.tsx themeScript has dead var `t` + duplicate getItem call - cosmetic
+- T4 TopicHubs may still be 4-col (needs verify)
+- LatestPostsSidebarCard was referenced in an intermediate page.tsx draft,
+  then removed; final page.tsx has no reference (verified 2026-10-03 17:02)
+
+Design decisions:
+- Dark default via SSR `className="... dark"`; inline script only REMOVES
+  .dark if `localStorage.theme === 'light'`. Prevents FOUC. Toggle unchanged.
+- Featured post = VERTICAL card at ALL breakpoints (image top, content below).
+  Not horizontal. Hero grid = 1.05fr / 0.95fr at lg+, stacked below.
+- Hero is full-width (own Section); main+sidebar 8/4 below.
+- No hardcoded widths - all `fr` units.
+
+Verified 2026-10-03:
+- PowerShell file inspection (layout, HomeHero, PostCard, sidebar/*, page.tsx)
+- tsc / lint / build passed after T1+T2 and after T3 final
+- Manual: dark violet aurora on first paint, no light flash
+
+### 9.7 — Collections (Phase C) (IMPLEMENTED 2026-10-03, visual QA pending)
+
+Files added:
+- prisma/migrations/20261003140119_add_collection_model/migration.sql
+- lib/content/collections.ts
+
+Files changed:
+- prisma/schema.prisma                     + Collection, CollectionPost models
+                                           + Post.collections CollectionPost[]
+- prisma/seed.ts                           split into seedAdmin() + seedFeaturedCollection()
+- components/home/sidebar/FeaturedCollectionCard.tsx
+                                           props: { collection: FeaturedCollection | null }
+                                           null → return null (card hidden)
+- app/(public)/page.tsx                    + getFeaturedCollection() fetch + prop pass
+- tsconfig.json                            exclude: ["node_modules", "_backup"]
+
+Schema (Collection):
+- id (cuid PK), slug (unique), title, description (Text), coverImage?, featured (bool, default false)
+- createdAt, updatedAt, @@index([featured])
+- posts CollectionPost[]
+
+Schema (CollectionPost):
+- composite PK (collectionId, postId), position (int, default 0)
+- collection FK → Collection (Cascade), post FK → Post (Cascade)
+- @@index([postId])
+
+Migration SQL:
+- CREATE TABLE Collection + CollectionPost
+- UNIQUE INDEX on slug, INDEX on featured, INDEX on postId
+- FK CASCADE on both relations
+- NO ALTER TABLE Post (reverse relation is virtual — correct)
+
+lib/content/collections.ts:
+- type FeaturedCollection = { id, slug, title, description, coverImage, featured, postCount }
+- getFeaturedCollection(): Promise<FeaturedCollection | null>
+- _count.posts (not hydrated posts[])
+- getCollectionBySlug() DEFERRED until /collections/[slug] page planned
+
+Seed data:
+- Collection: slug="modern-web-development", featured=true
+- Attached: 5 most recent PUBLISHED posts (positions 0..4)
+
+Verified 2026-10-03:
+- npx prisma validate: pass
+- npx prisma migrate status: 9 migrations, up to date
+- npx prisma generate: pass (after EPERM fix)
+- npx tsc --noEmit: 0 errors (after _backup exclude)
+- npx tsx getFeaturedCollection(): returned real row, postCount=3
+- npx tsx prisma/seed.ts: collection created, idempotent on re-run
+
+Pending:
+- Manual browser check (home sidebar card + empty-state hide) NOT DONE
+- next dev server was showing .next ENOENT on cold start
+
+Design decisions:
+- getCollectionBySlug() deferred — no /collections/[slug] page yet
+- FeaturedCollectionCard link stays /topics — detail page future phase
+- postCount via _count (not posts[]) — card only renders metadata
+- _backup excluded from tsc — snapshots are not source code
+
+---
 
 ### 9.6 — Force Delete + Profile Upload (COMPLETED 2026-09-29)
 
@@ -473,6 +597,8 @@ None currently. (Section reserved for next phase.)
 | /favicon.ico 404 in browser console | Cosmetic | Add app/icon.tsx or public/favicon.ico (low priority) |
 | Project not under version control | No rollback safety | Run `git init` + first commit (user action) |
 | TiDB Cloud anycast IP routing intermittent | Prisma hangs ("Can't reach database") | Switch DNS to 1.1.1.1; or hosts file pin to working IP |
+| Phase C visual QA pending | Card not confirmed in browser | Run dev server, check home sidebar |
+| Next.js dev .next ENOENT on cold start | Cosmetic; self-heals on recompile | Clean .next/ if persistent |
 
 ---
 
@@ -490,6 +616,16 @@ Current block: 9.5 Account Deletion (parallel to 9.4 Admin Panel)
     9.4.7  Verify          DONE (2026-09-24, tsc clean)
     9.5    Account Deletion DONE (2026-09-24, tsc clean)
     9.6    Force Delete + Profile Upload DONE (2026-09-29, tsc clean)
+    C1     Collection model + migration    DONE (2026-10-03, tsc clean)
+    C2     lib/content/collections.ts      DONE (2026-10-03, tsc clean)
+    C3     FeaturedCollectionCard wire     DONE (2026-10-03, visual QA pending)
+    9.7    UI Redesign Block (B + polish T1-T5) DONE (2026-10-03)
+
+Redesign block (A/B/C/D) status:
+    Phase A (backend foundation)   NOT STARTED  (A1-A4)
+    Phase B (home redesign)        DONE (= 9.7)
+    Phase C (collection model)     IN PROGRESS  (C1-C3)
+    Phase D (restyle + mobile)     PENDING      (D1-D5)
 
 ---
 
@@ -524,6 +660,13 @@ Do NOT build as part of current phases:
 | 2026-09-29 | 9.6   | Profile upload (avatar + cover) + navbar sync | tsc: 0 errors; upload -> save -> navbar updates |
 | 2026-09-29 | 9.6   | Sticky topbar fix (top-14 z-20) | manual: no overlap with navbar on scroll |
 | 2026-09-24 | - | Created MEMORY.md | manual |
+| 2026-10-03 | C    | Collections backend + featured card | tsc: 0 errors; DB query verified via tsx; visual QA pending |
+| 2026-10-03 | 9.7 | B1-B8 home redesign (hero, topics, sidebar, page) | manual: visual + build |
+| 2026-10-03 | 9.7 | T1+T2 dark default + hero polish | tsc/lint/build; manual: dark first paint |
+| 2026-10-03 | 9.7 | T3 PostCard hero vertical (16/9 image top) | tsc/lint/build; manual: card vertical |
+| 2026-10-03 | 9.7 | T5 sidebar cards rounded-xl | PowerShell inspect: 5/5 files |
+| 2026-10-03 | 9.7 | B8 cleanup: AnimatedHero + HeroEditorial deleted | Test-Path False |
+| 2026-10-03 | 9.7 | Removed LatestPostsSidebarCard + page.tsx cleanup | PowerShell inspect |
 
 ---
 

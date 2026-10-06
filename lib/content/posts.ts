@@ -1,6 +1,14 @@
 ﻿import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/client";
 
+// Lightweight author shape for list views (RecentGrid, PostCard, etc.).
+// Full PostAuthor (with id + bio) is only fetched on the detail page.
+export type PostAuthorLite = {
+  name: string | null;
+  username: string | null;
+  image: string | null;
+};
+
 export type PostMeta = {
   slug: string;
   title: string;
@@ -11,19 +19,31 @@ export type PostMeta = {
   coverImage?: string | null;
   draft: boolean;
   readingTime: string;
+  views: number;
+  likes: number;
+  likedByMe: boolean;
+  author: PostAuthorLite;
 };
 
-export type PostAuthor = {
+export type PostAuthor = PostAuthorLite & {
   id: string;
-  name: string | null;
-  username: string | null;
-  image: string | null;
   bio: string | null;
 };
 
-export type Post = PostMeta & { content: string; author: PostAuthor };
-// Shared select â€” keeps shape consistent across all queries.
+// Omit + re-add: PostMeta carries the lite author; Post upgrades to the
+// full author. Avoids a confusing PostMeta & PostAuthor intersection.
+export type Post = Omit<PostMeta, "author"> & {
+  content: string;
+  author: PostAuthor;
+};
+
+// Shared select — keeps shape consistent across all queries.
 // `satisfies` gives us the exact Prisma payload type without runtime cost.
+//
+// `likes: { select: { userId: true } }` fetches every like row for a post so
+// we can compute both the count and `likedByMe` in a single query. Fine for
+// blog-scale traffic; revisit with `_count` + a filtered select if a post
+// ever accumulates thousands of likes.
 const POST_SELECT = {
   slug: true,
   title: true,
@@ -33,7 +53,10 @@ const POST_SELECT = {
   pillar: true,
   coverImage: true,
   status: true,
+  views: true,
+  author: { select: { name: true, username: true, image: true } },
   tags: { select: { tag: { select: { name: true } } } },
+  likes: { select: { userId: true } },
 } satisfies Prisma.PostSelect;
 
 type PostRow = Prisma.PostGetPayload<{ select: typeof POST_SELECT }>;
@@ -51,7 +74,7 @@ function calcReadingTime(text: string): string {
   return `${minutes} min read`;
 }
 
-function toPostMeta(post: PostRow): PostMeta {
+function toPostMeta(post: PostRow, currentUserId?: string): PostMeta {
   return {
     slug: post.slug,
     title: post.title,
@@ -62,25 +85,46 @@ function toPostMeta(post: PostRow): PostMeta {
     coverImage: post.coverImage,
     draft: post.status === "DRAFT",
     readingTime: calcReadingTime(post.content),
+    views: post.views,
+    likes: post.likes.length,
+    likedByMe: currentUserId
+      ? post.likes.some((l) => l.userId === currentUserId)
+      : false,
+    author: {
+      name: post.author.name,
+      username: post.author.username,
+      image: post.author.image,
+    },
   };
 }
 
-export async function getAllPosts(): Promise<PostMeta[]> {
+export async function getAllPosts(
+  currentUserId?: string
+): Promise<PostMeta[]> {
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { date: "desc" },
     select: POST_SELECT,
   });
-  return posts.map(toPostMeta);
+  return posts.map((p) => toPostMeta(p, currentUserId));
 }
-export async function getPostBySlug(slug: string): Promise<Post | null> {
+
+export async function getPostBySlug(
+  slug: string,
+  currentUserId?: string
+): Promise<Post | null> {
   const post = await prisma.post.findFirst({
     where: { slug, status: "PUBLISHED" },
     select: POST_DETAIL_SELECT,
   });
   if (!post) return null;
-  return { ...toPostMeta(post), content: post.content, author: post.author };
+  return {
+    ...toPostMeta(post, currentUserId),
+    content: post.content,
+    author: post.author,
+  };
 }
+
 export async function getAllPostSlugs(): Promise<string[]> {
   const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
@@ -89,16 +133,22 @@ export async function getAllPostSlugs(): Promise<string[]> {
   return posts.map((p) => p.slug);
 }
 
-export async function getPostsByPillar(pillar: string): Promise<PostMeta[]> {
+export async function getPostsByPillar(
+  pillar: string,
+  currentUserId?: string
+): Promise<PostMeta[]> {
   const posts = await prisma.post.findMany({
     where: { pillar, status: "PUBLISHED" },
     orderBy: { date: "desc" },
     select: POST_SELECT,
   });
-  return posts.map(toPostMeta);
+  return posts.map((p) => toPostMeta(p, currentUserId));
 }
 
-export async function getPostsByTag(tag: string): Promise<PostMeta[]> {
+export async function getPostsByTag(
+  tag: string,
+  currentUserId?: string
+): Promise<PostMeta[]> {
   const posts = await prisma.post.findMany({
     where: {
       status: "PUBLISHED",
@@ -107,7 +157,7 @@ export async function getPostsByTag(tag: string): Promise<PostMeta[]> {
     orderBy: { date: "desc" },
     select: POST_SELECT,
   });
-  return posts.map(toPostMeta);
+  return posts.map((p) => toPostMeta(p, currentUserId));
 }
 
 export async function getAllTags(): Promise<{ tag: string; count: number }[]> {
@@ -125,10 +175,17 @@ export async function getAllTags(): Promise<{ tag: string; count: number }[]> {
     .filter((t) => t.count > 0)
     .sort((a, b) => a.tag.localeCompare(b.tag));
 }
-export async function getAllPostsWithContent(): Promise<(PostMeta & { content: string })[]> {  const posts = await prisma.post.findMany({
+
+export async function getAllPostsWithContent(
+  currentUserId?: string
+): Promise<(PostMeta & { content: string })[]> {
+  const posts = await prisma.post.findMany({
     where: { status: "PUBLISHED" },
     orderBy: { date: "desc" },
     select: POST_SELECT,
   });
-  return posts.map((p) => ({ ...toPostMeta(p), content: p.content }));
+  return posts.map((p) => ({
+    ...toPostMeta(p, currentUserId),
+    content: p.content,
+  }));
 }

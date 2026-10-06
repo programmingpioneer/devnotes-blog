@@ -30,12 +30,18 @@ export function getTopicBySlug(slug: string): Topic | undefined {
   return topics.find((t) => t.slug === slug);
 }
 
-export function getPostsByPillar(slug: string): Promise<PostMeta[]> {
-  return dbGetPostsByPillar(slug);
+export function getPostsByPillar(
+  slug: string,
+  currentUserId?: string
+): Promise<PostMeta[]> {
+  return dbGetPostsByPillar(slug, currentUserId);
 }
 
-export function getPostsByTag(tag: string): Promise<PostMeta[]> {
-  return dbGetPostsByTag(tag);
+export function getPostsByTag(
+  tag: string,
+  currentUserId?: string
+): Promise<PostMeta[]> {
+  return dbGetPostsByTag(tag, currentUserId);
 }
 
 export function getPillarContent(slug: string): string | null {

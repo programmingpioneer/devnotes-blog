@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Container from "@/components/shared/Container";
 import Section from "@/components/shared/Section";
 import SearchInput from "@/components/shared/SearchInput";
@@ -8,6 +8,7 @@ import TagPill from "@/components/shared/TagPill";
 import { getAllPosts, getAllPostsWithContent } from "@/lib/content/posts";
 import { getAllTags } from "@/lib/content/topics";
 import { searchPosts } from "@/lib/search/query";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -25,13 +26,16 @@ export default async function SearchPage({
   const { q } = await searchParams;
   const query = (q ?? "").trim();
 
+  const user = await getCurrentUser();
+  const canLike = !!user;
+
   const allMeta = await getAllPosts();
   const allTags = (await getAllTags()).slice(0, 10);
 
   let results: ReturnType<typeof searchPosts> = [];
 
   if (query) {
-    const withContent = await getAllPostsWithContent();
+    const withContent = await getAllPostsWithContent(user?.id);
     results = searchPosts(withContent, query);
   }
 
@@ -81,7 +85,7 @@ export default async function SearchPage({
           </p>
           <div className="grid gap-5 md:grid-cols-2">
             {results.map((post) => (
-              <PostCard key={post.slug} post={post} />
+              <PostCard key={post.slug} post={post} canLike={canLike} />
             ))}
           </div>
         </Section>

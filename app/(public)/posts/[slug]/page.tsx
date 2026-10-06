@@ -10,11 +10,14 @@ import Breadcrumbs from "@/components/post/Breadcrumbs";
 import AuthorCard from "@/components/post/AuthorCard";
 import JSONLD from "@/components/shared/JSONLD";
 import { mdxComponents } from "@/components/post/mdx-components";
+import LikeButton from "@/components/post/LikeButton";
+import ViewTracker from "@/components/post/ViewTracker";
 import { getPostBySlug, getAllPostSlugs } from "@/lib/content/posts";
 import { extractHeadings } from "@/lib/content/headings";
 import { postMetadata } from "@/lib/seo/metadata";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import { topics } from "@/content/topics";
+import { getCurrentUser } from "@/lib/auth/session";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -31,7 +34,8 @@ export async function generateMetadata({ params }: Params) {
 
 export default async function PostPage({ params }: Params) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const user = await getCurrentUser();
+  const post = await getPostBySlug(slug, user?.id);
 
   if (!post) notFound();
 
@@ -52,23 +56,24 @@ export default async function PostPage({ params }: Params) {
     <Container>
       <JSONLD data={[articleJsonLd(post), breadcrumbJsonLd(crumbs)]} />
 
-      <div className="grid gap-12 py-12 md:py-16 lg:grid-cols-[1fr_200px]">
-        <article>
+        <div className="grid gap-8 py-8 md:gap-12 md:py-16 lg:grid-cols-[1fr_200px]">
+         <article className="min-w-0">
+          <ViewTracker slug={post.slug} />
           <Breadcrumbs items={crumbs} />
 
           {post.coverImage && (
-            <div className="mt-6 overflow-hidden rounded-xl">
+            <div className="mt-6 overflow-hidden rounded-xl border border-border bg-muted/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={post.coverImage}
                 alt={post.title}
-                className="w-full h-auto"
+                className="mx-auto max-h-105 w-auto max-w-full object-contain"
               />
             </div>
           )}
 
           <header className="mb-10 mt-8">
-            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
               {post.title}
             </h1>
             <p className="mt-3 text-muted">{post.excerpt}</p>
@@ -94,6 +99,8 @@ export default async function PostPage({ params }: Params) {
               <time dateTime={post.date}>{post.date}</time>
               <span aria-hidden>·</span>
               <span>{post.readingTime}</span>
+              <span aria-hidden>·</span>
+              <span>{post.views.toLocaleString()} views</span>
             </div>
           </header>
 
@@ -122,6 +129,15 @@ export default async function PostPage({ params }: Params) {
           </Prose>
 
           <AuthorCard author={post.author} />
+
+          <div className="mt-8 flex items-center justify-end">
+            <LikeButton
+              slug={post.slug}
+              initialLikes={post.likes}
+              initialLikedByMe={post.likedByMe}
+              canLike={!!user}
+            />
+          </div>
         </article>
 
         <aside className="hidden lg:block">

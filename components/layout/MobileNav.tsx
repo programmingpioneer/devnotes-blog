@@ -46,52 +46,51 @@ function HamburgerIcon({ open }: { open: boolean }) {
 export default function MobileNav({ items }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
   // Close on route change
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // Escape key + focus management + body scroll lock
+  // Close on outside click / Escape
   useEffect(() => {
     if (!open) return;
 
+    const onPointerDown = (e: PointerEvent) => {
+      const root = rootRef.current;
+      if (root && !root.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
+
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKey);
-
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    // Focus first link
-    const t = setTimeout(() => firstLinkRef.current?.focus(), 50);
-
     return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      clearTimeout(t);
     };
   }, [open]);
 
-  // Return focus to trigger on close
+  // Close when crossing to desktop (md breakpoint). Prevents a stale-open
+  // dropdown from lingering after a viewport resize / responsive-mode toggle.
   useEffect(() => {
-    if (!open) {
-      // Only return focus if trigger exists and user had opened before
-      return;
-    }
-  }, [open]);
-
-  const closeAndRestoreFocus = () => {
-    setOpen(false);
-    // Restore focus after animation
-    setTimeout(() => triggerRef.current?.focus(), 0);
-  };
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => setOpen(false);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   return (
-    <div className="md:hidden">
+    <div ref={rootRef} className="relative md:hidden">
       <button
         ref={triggerRef}
         type="button"
@@ -99,59 +98,58 @@ export default function MobileNav({ items }: MobileNavProps) {
         aria-label={open ? "Close menu" : "Open menu"}
         aria-controls="mobile-nav"
         aria-expanded={open}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-muted transition-colors duration-150 hover:border-accent hover:text-accent"
+        aria-haspopup="menu"
+        className={cn(
+          "inline-flex h-10 w-10 items-center justify-center rounded-md border transition-colors duration-150",
+          open
+            ? "border-accent text-accent"
+            : "border-border text-muted hover:border-accent hover:text-accent"
+        )}
       >
         <HamburgerIcon open={open} />
       </button>
 
-      {/* Backdrop */}
+      {/* Dropdown panel — solid, anchored below the button, right-aligned. */}
       <div
-        aria-hidden="true"
-        onClick={() => closeAndRestoreFocus()}
-        className={cn(
-          "fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-          "motion-safe:transition-opacity motion-safe:duration-200"
-        )}
-      />
-
-      {/* Drawer */}
-      <nav
         id="mobile-nav"
+        role="menu"
         aria-label="Mobile"
         className={cn(
-          "fixed right-0 top-0 z-50 h-full w-full max-w-xs border-l border-border bg-card shadow-soft-lg",
-          open ? "translate-x-0" : "translate-x-full",
-          "motion-safe:transition-transform motion-safe:duration-300"
+          "absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-lg",
+          "border border-border bg-background shadow-lg",
+          "origin-top-right",
+          "motion-safe:transition motion-safe:duration-150 motion-safe:ease-out",
+          "motion-reduce:transition-none",
+          open
+            ? "visible translate-y-0 scale-100 opacity-100"
+            : "invisible pointer-events-none -translate-y-1 scale-95 opacity-0"
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <span className="text-sm font-semibold tracking-tight">Menu</span>
-          <button
-            type="button"
-            onClick={() => closeAndRestoreFocus()}
-            aria-label="Close menu"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted transition-colors duration-150 hover:bg-subtle hover:text-foreground"
-          >
-            <HamburgerIcon open={true} />
-          </button>
-        </div>
-
-        <ul className="flex flex-col p-2">
-          {items.map((item, i) => (
-            <li key={item.href}>
-              <Link
-                ref={i === 0 ? firstLinkRef : undefined}
-                href={item.href}
-                onClick={closeAndRestoreFocus}
-                className="block rounded-md px-4 py-3 text-base text-foreground transition-colors duration-150 hover:bg-subtle"
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
+        <ul className="flex flex-col p-1">
+          {items.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href));
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "block rounded-md px-3 py-2 text-sm transition-colors duration-150",
+                    active
+                      ? "bg-subtle font-medium text-foreground"
+                      : "text-foreground hover:bg-subtle"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
-      </nav>
+      </div>
     </div>
   );
 }
