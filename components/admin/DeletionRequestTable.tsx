@@ -1,4 +1,5 @@
 "use client";
+import Badge from "@/components/ui/Badge";
 
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/shared/Toast";
@@ -192,29 +193,22 @@ export default function DeletionRequestTable({
                                 <td className="px-4 py-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {req.daysRemaining === 0 ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full bg-red-500"
-                          aria-hidden="true"
-                        />
+                      <Badge variant="error" pill dot>
                         Ready
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full bg-muted"
-                          aria-hidden="true"
-                        />
+                      <Badge variant="neutral" pill dot>
                         Pending
-                      </span>
+                      </Badge>
                     )}
                     {req.forceRequestedAt && (
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500"
+                      <Badge
+                        variant="error"
+                        pill
                         title={`User requested immediate deletion on ${formatDate(req.forceRequestedAt)}`}
                       >
                         Force requested
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </td>
@@ -226,7 +220,7 @@ export default function DeletionRequestTable({
                     <button
                       type="button"
                       onClick={() => openModal(req, "force")}
-                      className="rounded-md border border-red-500/40 bg-red-500/5 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10"
+                      className="rounded-md border border-error/40 bg-error/5 px-3 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error/10"
                     >
                       Force delete now
                     </button>
@@ -239,7 +233,7 @@ export default function DeletionRequestTable({
                           ? `Available in ${req.daysRemaining} day(s), or use "Force delete now" to override`
                           : undefined
                       }
-                      className="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-md bg-error px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Delete permanently
                     </button>
@@ -324,7 +318,7 @@ export default function DeletionRequestTable({
                 type="button"
                 onClick={confirmPurge}
                 disabled={busy || !emailMatches}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-error px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {busy ? "Deleting..." : "Delete permanently"}
               </button>

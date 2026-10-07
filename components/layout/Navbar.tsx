@@ -3,6 +3,7 @@ import { siteConfig } from "@/content/config";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import MobileNav from "@/components/layout/MobileNav";
 import NavUserArea from "@/components/layout/NavUserArea";
+import GitHubStars from "@/components/layout/GitHubStars";
 
 // Split a camelCase title like "DevNotes" into ["Dev", "Notes"].
 // Falls back to the whole string as the brand half when the title has no
@@ -44,6 +45,7 @@ export default function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
+          <GitHubStars />
           <NavUserArea />
           <ThemeToggle />
           <MobileNav items={siteConfig.nav} />

@@ -93,7 +93,7 @@ export default function UserActions({
         onClick={onDelete}
         disabled={deleteDisabled || busy !== null}
         title={deleteTooltip}
-        className="rounded-md border border-border px-3 py-1 text-xs text-red-600 transition-colors hover:border-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400"
+        className="rounded-md border border-border px-3 py-1 text-xs text-error transition-colors hover:border-error disabled:cursor-not-allowed disabled:opacity-50"
       >
         {busy === "delete" ? "..." : "Delete"}
       </button>

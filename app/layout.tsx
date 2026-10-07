@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import Providers from "@/components/shared/Providers";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -15,6 +15,12 @@ const geist = Geist({
   display: "swap",
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: { default: siteConfig.title, template: `%s — ${siteConfig.title}` },
@@ -27,9 +33,8 @@ export const metadata: Metadata = {
     title: siteConfig.title,
     description: siteConfig.description,
   },
-  twitter: {
+   twitter: {
     card: "summary_large_image",
-    creator: siteConfig.author.twitter,
   },
   robots: { index: true, follow: true },
 };
@@ -42,15 +47,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geist.variable} dark`}
+      className={`${geist.variable} ${jetbrainsMono.variable} dark`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-screen flex flex-col">
-        {/* Aurora ambient layer — fixed, behind all content */}
-        <div aria-hidden className="ambient-background" />
         <Providers>
           <JSONLD data={[organizationJsonLd(), websiteJsonLd()]} />
           <ProgressBar />

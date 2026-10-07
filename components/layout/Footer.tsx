@@ -17,14 +17,6 @@ function GitHubIcon() {
   );
 }
 
-function TwitterIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
 function RSSIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -35,7 +27,6 @@ function RSSIcon() {
 
 const socialLinks = [
   { href: siteConfig.social.github, label: "GitHub", icon: <GitHubIcon />, external: true },
-  { href: siteConfig.social.twitter, label: "Twitter", icon: <TwitterIcon />, external: true },
   { href: siteConfig.social.rss, label: "RSS feed", icon: <RSSIcon />, external: false },
 ];
 
@@ -118,6 +109,22 @@ export default function Footer() {
               <p className="pt-1">Built with Next.js and Tailwind CSS.</p>
             </div>
           </div>
+        </div>
+
+        {/* Legal links */}
+        <div className="mt-10 border-t border-border pt-6">
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
+            {siteConfig.legal.nav.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="text-muted transition-colors duration-200 hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

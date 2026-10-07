@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ApproveRejectButtons from "@/components/admin/ApproveRejectButtons";
+import Badge from "@/components/ui/Badge";
 
 export type PendingCardData = {
   id: string;
@@ -54,9 +55,9 @@ export default function PendingCard({ post }: { post: PendingCardData }) {
             <h3 className="line-clamp-2 text-sm font-semibold group-hover:text-accent">
               {post.title}
             </h3>
-            <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+            <Badge variant="warning" size="sm" className="shrink-0">
               Pending
-            </span>
+            </Badge>
           </div>
 
           <p className="line-clamp-2 text-xs text-muted">{post.excerpt}</p>

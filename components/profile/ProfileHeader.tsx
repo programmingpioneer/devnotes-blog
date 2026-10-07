@@ -40,7 +40,7 @@ export default function ProfileHeader({
   return (
     <header className="rounded-xl border border-border bg-background overflow-hidden">
       {/* Cover area — relative for avatar positioning */}
-      <div className="relative h-40 w-full sm:h-52">
+        <div className="relative aspect-8/3 w-full">
         {coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

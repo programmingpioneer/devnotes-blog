@@ -284,7 +284,7 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
               <h2 className="mb-3 text-sm font-semibold">Avatar</h2>
               <div className="space-y-2">
                                <p className="text-xs text-muted">
-                  Recommended: 400 × 400 · PNG / JPEG / WebP / AVIF · max 5 MB
+                  Recommended: 400 × 400 (1:1 ratio) · PNG / JPEG / WebP / AVIF · max 5 MB
                 </p>
                                <div className="flex items-center gap-2">
                   <label
@@ -423,7 +423,7 @@ export default function EditProfileForm({ initial, email }: EditProfileFormProps
               <h2 className="mb-3 text-sm font-semibold">Cover image</h2>
               <div className="space-y-2">
                                 <p className="text-xs text-muted">
-                  Recommended: 1500 × 500 · PNG / JPEG / WebP / AVIF · max 5 MB
+                  Recommended: 1600 × 600 (8:3 ratio) · PNG / JPEG / WebP / AVIF · max 5 MB
                 </p>
                 <div className="flex items-center gap-2">
                   <label

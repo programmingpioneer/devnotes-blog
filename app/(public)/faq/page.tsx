@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import LegalLayout from "@/components/shared/LegalLayout";
 import { siteConfig } from "@/content/config";
 
 export const metadata: Metadata = {
@@ -107,23 +108,15 @@ const items: FaqItem[] = [
 
 export default function FaqPage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-16 md:py-20">
-      <header className="border-b border-border pb-6">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted">
-          Help
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-          Frequently asked questions
-        </h1>
-        <p className="mt-3 text-sm text-muted">
-          Quick answers to the most common questions about {siteConfig.title}.
-        </p>
-      </header>
+    <LegalLayout eyebrow="Help" title="Frequently asked questions">
+      <p>
+        Quick answers to the most common questions about {siteConfig.title}.
+      </p>
 
-      <div className="mt-10 divide-y divide-border overflow-hidden rounded-lg border border-border">
+      <div className="mt-2 divide-y divide-border overflow-hidden rounded-lg border border-border">
         {items.map((item) => (
           <details key={item.q} className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium transition-colors hover:bg-accent/[0.03] [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 text-sm font-medium transition-colors hover:bg-accent/[0.03] sm:px-5 [&::-webkit-details-marker]:hidden">
               <span>{item.q}</span>
               <svg
                 width="16"
@@ -141,15 +134,17 @@ export default function FaqPage() {
                 <path d="M5 12h14" />
               </svg>
             </summary>
-            <div className="px-5 pb-5 text-sm leading-relaxed text-muted">
+            <div className="px-4 pb-5 text-sm leading-relaxed text-muted sm:px-5">
               {item.a}
             </div>
           </details>
         ))}
       </div>
 
-      <div className="mt-10 rounded-lg border border-border bg-accent/[0.03] p-5">
-        <p className="text-sm font-semibold">Still need help?</p>
+      <div className="mt-4 rounded-lg border border-accent/30 bg-accent/[0.04] p-4 sm:p-5">
+        <p className="text-sm font-semibold text-foreground">
+          Still need help?
+        </p>
         <p className="mt-1 text-sm text-muted">
           Send us a message on the{" "}
           <Link
@@ -161,6 +156,6 @@ export default function FaqPage() {
           .
         </p>
       </div>
-    </article>
+    </LegalLayout>
   );
 }

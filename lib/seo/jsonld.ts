@@ -9,7 +9,7 @@ export function organizationJsonLd(): JsonLd {
     "@type": "Organization",
     name: siteConfig.title,
     url: siteConfig.url,
-    sameAs: [siteConfig.social.github, siteConfig.social.twitter],
+    sameAs: [siteConfig.social.github],
   };
 }
 

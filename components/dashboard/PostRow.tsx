@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/shared/Toast";
+import Badge from "@/components/ui/Badge";
 
-const STATUS_STYLES: Record<string, string> = {
-  DRAFT: "border-border text-muted",
-  PENDING_REVIEW: "border-amber-500/30 bg-amber-500/10 text-amber-600",
-  PUBLISHED: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
-  REJECTED: "border-red-500/30 bg-red-500/10 text-red-600",
+const STATUS_VARIANTS: Record<
+  string,
+  "neutral" | "warning" | "success" | "error"
+> = {
+  DRAFT: "neutral",
+  PENDING_REVIEW: "warning",
+  PUBLISHED: "success",
+  REJECTED: "error",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -80,13 +84,9 @@ export default function PostRow({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
-                STATUS_STYLES[status] ?? STATUS_STYLES.DRAFT
-              }`}
-            >
+            <Badge variant={STATUS_VARIANTS[status] ?? "neutral"}>
               {STATUS_LABELS[status] ?? status}
-            </span>
+            </Badge>
             <span className="text-xs text-muted">
               Updated {new Date(updatedAt).toLocaleDateString()}
             </span>

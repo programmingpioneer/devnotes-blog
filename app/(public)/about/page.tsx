@@ -63,13 +63,20 @@ export default function AboutPage() {
 
       <section className="mt-12 border-t border-border pt-8">
         <h2 className="text-xl font-semibold tracking-tight">Get in touch</h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          The best way to reach me is on{" "}
-          <Link
-            href={siteConfig.social.twitter}
+               <p className="mt-3 text-sm leading-relaxed text-muted">
+          You can reach me by{" "}
+          <a
+            href={`mailto:${siteConfig.legal.contactEmail}`}
             className="text-foreground underline underline-offset-4 hover:text-accent"
           >
-            Twitter
+            email
+          </a>{" "}
+          or through the{" "}
+          <Link
+            href="/contact"
+            className="text-foreground underline underline-offset-4 hover:text-accent"
+          >
+            contact page
           </Link>
           . Code lives on{" "}
           <Link
@@ -78,7 +85,7 @@ export default function AboutPage() {
           >
             GitHub
           </Link>
-          . If you&apos;d rather follow along quietly, the{" "}
+          , and if you&apos;d rather follow along quietly, the{" "}
           <Link
             href={siteConfig.social.rss}
             className="text-foreground underline underline-offset-4 hover:text-accent"

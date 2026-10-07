@@ -16,13 +16,6 @@ const ALLOWED_MIME = new Set([
   "image/avif",
 ]);
 
-const EXT_BY_MIME: Record<string, string> = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
-  "image/avif": "avif",
-};
-
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const KEY_PREFIX = "uploads/";
 

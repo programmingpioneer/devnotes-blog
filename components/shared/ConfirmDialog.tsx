@@ -74,7 +74,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             className={`rounded-md px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 ${
-              destructive ? "bg-red-600" : "bg-accent"
+              destructive ? "bg-error" : "bg-accent"
             }`}
           >
             {confirmLabel}

@@ -25,7 +25,6 @@ export function postMetadata(post: PostMeta): Metadata {
       title: post.title,
       description: post.excerpt,
       images: [ogImage],
-      creator: siteConfig.author.twitter,
     },
   };
 }

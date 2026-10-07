@@ -13,7 +13,7 @@ export default function TermsPage() {
   const { legal, title } = siteConfig;
 
   return (
-    <LegalLayout title="Terms of Service" lastUpdated={legal.lastUpdated}>
+      <LegalLayout eyebrow="Legal" title="Terms of Service" lastUpdated={legal.lastUpdated}>
       <p>
         These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and
         use of {title} (the &ldquo;Service&rdquo;), operated by{" "}

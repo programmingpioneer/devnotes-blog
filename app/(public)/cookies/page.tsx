@@ -13,7 +13,7 @@ export default function CookiesPage() {
   const { legal, title } = siteConfig;
 
   return (
-    <LegalLayout title="Cookie Policy" lastUpdated={legal.lastUpdated}>
+      <LegalLayout eyebrow="Legal" title="Cookie Policy" lastUpdated={legal.lastUpdated}>
       <p>
         This Cookie Policy explains how {title} uses cookies and similar
         technologies such as <code>localStorage</code>. It should be read
@@ -55,9 +55,9 @@ export default function CookiesPage() {
 
       <h3>2.3 Analytics</h3>
       <p>
-        [If you add analytics, list the provider, the cookie names, and what
-        they measure. If you do not use analytics, state: &ldquo;We do not
-        currently use analytics or advertising cookies.&rdquo;]
+        We do not currently use analytics or advertising cookies. If we add
+        them in the future, we will update this policy and, where required,
+        ask for your consent first.
       </p>
 
       <h2>3. What We Do NOT Use</h2>

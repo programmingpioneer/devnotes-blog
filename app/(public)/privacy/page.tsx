@@ -13,7 +13,7 @@ export default function PrivacyPage() {
   const { legal, title } = siteConfig;
 
   return (
-    <LegalLayout title="Privacy Policy" lastUpdated={legal.lastUpdated}>
+      <LegalLayout eyebrow="Legal" title="Privacy Policy" lastUpdated={legal.lastUpdated}>
       <p>
         This Privacy Policy explains what data {title} (&ldquo;we&rdquo;,
         &ldquo;us&rdquo;) collects, how we use it, and the choices you have.

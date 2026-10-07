@@ -26,9 +26,9 @@ export function useToast(): ToastContextValue {
 
 const styles: Record<ToastType, string> = {
   success:
-    "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300",
+    "border-success/30 bg-success/10 text-success",
   error:
-    "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
+    "border-error/30 bg-error/10 text-error",
   info: "border-border bg-background text-foreground",
 };
 

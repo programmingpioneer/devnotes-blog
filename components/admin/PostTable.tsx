@@ -1,5 +1,6 @@
 import Link from "next/link";
 import DeletePostButton from "./DeletePostButton";
+import Badge from "@/components/ui/Badge";
 import type { PostStatus } from "@prisma/client";
 
 export type PostRow = {
@@ -24,36 +25,17 @@ function formatDate(d: Date): string {
 }
 
 function StatusBadge({ status }: { status: PostStatus }) {
-  const map: Record<PostStatus, { label: string; className: string }> = {
-    DRAFT: {
-      label: "Draft",
-      className:
-        "border-border bg-muted/10 text-muted",
-    },
-    PENDING_REVIEW: {
-      label: "Pending",
-      className:
-        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    },
-    PUBLISHED: {
-      label: "Published",
-      className:
-        "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400",
-    },
-    REJECTED: {
-      label: "Rejected",
-      className:
-        "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400",
-    },
+  const map: Record<
+    PostStatus,
+    { label: string; variant: "neutral" | "warning" | "success" | "error" }
+  > = {
+    DRAFT: { label: "Draft", variant: "neutral" },
+    PENDING_REVIEW: { label: "Pending", variant: "warning" },
+    PUBLISHED: { label: "Published", variant: "success" },
+    REJECTED: { label: "Rejected", variant: "error" },
   };
   const cfg = map[status];
-  return (
-    <span
-      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.className}`}
-    >
-      {cfg.label}
-    </span>
-  );
+  return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
 }
 
 export default function PostTable({ posts }: { posts: PostRow[] }) {
