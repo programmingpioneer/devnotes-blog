@@ -5,8 +5,11 @@ export const siteConfig = {
     "Production-level Web Dev & Backend Architecture case studies.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   author: {
-    name: "Your Name",
-    twitter: "@yourhandle",
+    name: "Programming Pioneer",
+  },
+  repo: {
+    owner: "programmingpioneer",
+    name: "devnotes-blog",
   },
   nav: [
     { label: "Home", href: "/" },
@@ -14,17 +17,24 @@ export const siteConfig = {
     { label: "Topics", href: "/topics" },
     { label: "About", href: "/about" },
   ],
-  social: {
-    github: "https://github.com/yourusername",
-    twitter: "https://twitter.com/yourhandle",
+   social: {
+    github: "https://github.com/programmingpioneer/devnotes-blog",
+    twitter: "@programerPioner",
     rss: "/rss.xml",
   },
   legal: {
     lastUpdated: "2026-09-25",
-    contactEmail: "hello@example.com",
-    companyName: "[YOUR COMPANY NAME]",
-    jurisdiction: "[YOUR JURISDICTION]",
-    address: "[YOUR ADDRESS]",
+    contactEmail: "7t7sufyan@gmail.com",
+    companyName: "Programming Pioneer",
+    jurisdiction: "Pakistan",
+    address: "KPK, Malakand, Sakhakot",
+    nav: [
+      { label: "FAQ", href: "/faq" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Cookies", href: "/cookies" },
+      { label: "Contact", href: "/contact" },
+    ],
   },
 } as const;
 

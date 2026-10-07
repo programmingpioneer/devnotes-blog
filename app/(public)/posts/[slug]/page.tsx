@@ -17,7 +17,9 @@ import { extractHeadings } from "@/lib/content/headings";
 import { postMetadata } from "@/lib/seo/metadata";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import { topics } from "@/content/topics";
+import { siteConfig } from "@/content/config";
 import { getCurrentUser } from "@/lib/auth/session";
+import ShareButton from "@/components/post/ShareButton";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -101,6 +103,18 @@ export default async function PostPage({ params }: Params) {
               <span>{post.readingTime}</span>
               <span aria-hidden>·</span>
               <span>{post.views.toLocaleString()} views</span>
+              <span aria-hidden>·</span>
+              <ShareButton
+                variant="icon"
+                title={post.title}
+                excerpt={post.excerpt}
+                slug={post.slug}
+                coverImage={post.coverImage}
+                viewsLabel={`${post.views.toLocaleString()} views`}
+                siteUrl={siteConfig.url}
+                siteTitle={siteConfig.title}
+                twitterHandle={siteConfig.social.twitter}
+              />
             </div>
           </header>
 
@@ -130,7 +144,18 @@ export default async function PostPage({ params }: Params) {
 
           <AuthorCard author={post.author} />
 
-          <div className="mt-8 flex items-center justify-end">
+          <div className="mt-8 flex items-center justify-end gap-3">
+            <ShareButton
+              variant="button"
+              title={post.title}
+              excerpt={post.excerpt}
+              slug={post.slug}
+              coverImage={post.coverImage}
+              viewsLabel={`${post.views.toLocaleString()} views`}
+              siteUrl={siteConfig.url}
+              siteTitle={siteConfig.title}
+              twitterHandle={siteConfig.social.twitter}
+            />
             <LikeButton
               slug={post.slug}
               initialLikes={post.likes}
